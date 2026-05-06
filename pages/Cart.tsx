@@ -521,7 +521,14 @@ _Pedido feito pelo site Marmitaria da Diih_`;
       <div className="space-y-4">
         {cart.map((item) => {
           let itemTotal = item.price;
-          (Object.values(item.selectedOptions) as ProductOption[][]).forEach(group => group.forEach(opt => itemTotal += opt.price));
+          if (item.optionGroups) {
+            item.optionGroups.forEach(group => {
+              const selected = (item.selectedOptions[group.id] || []);
+              selected.forEach(opt => { itemTotal += opt.price; });
+            });
+          } else {
+            (Object.values(item.selectedOptions) as ProductOption[][]).forEach(group => group.forEach(opt => itemTotal += opt.price));
+          }
           const mainImage = item.images && item.images.length > 0 ? item.images[0] : 'https://via.placeholder.com/300';
 
           return (

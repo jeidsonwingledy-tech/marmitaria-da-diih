@@ -38,8 +38,8 @@ export const processImage = async (file: File): Promise<string> => {
         let width = img.width;
         let height = img.height;
         
-        // 3. Resize (Max 800px for ideal quality/size balance in mobile apps)
-        const MAX_DIMENSION = 800;
+        // 3. Resize (Max 600px é ideal para miniaturas mobile com ótima compressão)
+        const MAX_DIMENSION = 600;
 
         if (width > height) {
             if (width > MAX_DIMENSION) {
@@ -69,8 +69,8 @@ export const processImage = async (file: File): Promise<string> => {
         ctx.drawImage(img, 0, 0, width, height);
 
         // 4. Compress and Standardize (Always output WebP for smallest file sizes)
-        // 0.7 quality provides excellent compression with minimal visual loss for food
-        const dataUrl = canvas.toDataURL('image/webp', 0.7);
+        // 0.65 quality: excelente compressão com perda visual mínima para fotos de comida
+        const dataUrl = canvas.toDataURL('image/webp', 0.65);
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error('O arquivo selecionado está corrompido ou não é uma imagem válida.'));

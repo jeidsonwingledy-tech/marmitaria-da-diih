@@ -32,13 +32,8 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
   // Fetch and Realtime Subscriptions
-  const fetchOrders = useCallback(async (force = false) => {
-    if (!supabase) return;
-
-    const cachedOrders = localStorage.getItem('db_orders');
-    if (!force && cachedOrders) {
-      return;
-    }
+  const fetchOrders = useCallback(async () => {
+    if (!supabase || !isAdminMode) return; // Clientes nunca buscam pedidos
 
     setIsLoadingOrders(true);
     try {
@@ -52,11 +47,12 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } finally {
       setIsLoadingOrders(false);
     }
-  }, []);
+  }, [isAdminMode]);
 
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]); // Feito apenas 1 vez, lendo do cache se existir
+    // Pedidos só são carregados quando o admin faz login
+    if (isAdminMode) fetchOrders();
+  }, [isAdminMode, fetchOrders]);
 
   // Realtime removido para não consumir tráfego contínuo
 
@@ -109,7 +105,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       updateOrderStatus,
       clearOrders,
       isLoadingOrders,
-      refreshOrders: () => fetchOrders(true)
+      refreshOrders: fetchOrders
     }}>
       {children}
     </OrderContext.Provider>

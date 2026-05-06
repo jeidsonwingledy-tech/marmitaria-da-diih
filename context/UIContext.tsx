@@ -23,28 +23,55 @@ export const useUI = () => {
   return context;
 };
 
+const SETTINGS_CACHE_KEY = 'db_settings_v2';
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos
+
+function readCache<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > CACHE_TTL_MS) return null; // expirado
+    return data as T;
+  } catch { return null; }
+}
+
+function writeCache(key: string, data: unknown) {
+  localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+}
+
 export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo>(() => {
-    const saved = localStorage.getItem('db_settings');
-    return saved ? JSON.parse(saved) : INITIAL_RESTAURANT_INFO;
+    // Lê o cache imediatamente para exibição instantânea
+    const cached = readCache<RestaurantInfo>(SETTINGS_CACHE_KEY);
+    if (cached) return cached;
+    // Fallback para o formato antigo sem TTL
+    try {
+      const old = localStorage.getItem('db_settings');
+      return old ? JSON.parse(old) : INITIAL_RESTAURANT_INFO;
+    } catch { return INITIAL_RESTAURANT_INFO; }
   });
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch Initial Data
+  // Fetch Initial Data com cache TTL de 10 minutos
   const fetchSettings = useCallback(async (force = false) => {
     if (!supabase) return;
 
-    const cached = localStorage.getItem('db_settings');
-    if (!force && cached) {
-      return;
+    if (!force) {
+      const cached = readCache<RestaurantInfo>(SETTINGS_CACHE_KEY);
+      if (cached) return; // Ainda válido, não consome bandwidth
     }
 
     try {
-      const { data, error } = await supabase.from('settings').select('*').eq('id', 'info').single();
+      const { data, error } = await supabase
+        .from('settings')
+        .select('id, name, phone, whatsappNumber, address, logo, banner, instagramUrl, facebookUrl, pixKey, pixKeyType, pixName, pixCity, businessHours, delivery, style, notice, adminUsername')
+        .eq('id', 'info')
+        .single();
       if (data && !error) {
         setRestaurantInfo(data as RestaurantInfo);
-        localStorage.setItem('db_settings', JSON.stringify(data));
+        writeCache(SETTINGS_CACHE_KEY, data);
       }
     } catch (err) {
       console.error("Settings fetch error:", err);
@@ -80,7 +107,9 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const updateRestaurantInfo = useCallback(async (updates: Partial<RestaurantInfo>) => {
-    setRestaurantInfo(prev => ({ ...prev, ...updates }));
+    const next = { ...restaurantInfo, ...updates };
+    setRestaurantInfo(next);
+    writeCache(SETTINGS_CACHE_KEY, next); // Atualiza cache local imediatamente
     
     if (supabase) {
       try {
@@ -94,7 +123,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         notify('Erro ao salvar informações', 'error');
       }
     } else {
-      localStorage.setItem('db_settings', JSON.stringify({ ...restaurantInfo, ...updates }));
+      localStorage.setItem('db_settings', JSON.stringify(next));
     }
   }, [restaurantInfo, notify]);
 

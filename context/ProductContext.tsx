@@ -6,6 +6,29 @@ import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { generateId } from '../utils/formatters';
 
+const PRODUCTS_CACHE_KEY = 'db_menuItems_v2';
+const CATS_CACHE_KEY = 'db_categorias_v2';
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos
+
+function readCache<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > CACHE_TTL_MS) return null;
+    return data as T;
+  } catch { return null; }
+}
+
+function writeCache(key: string, data: unknown) {
+  localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+}
+
+function bustProductsCache() {
+  localStorage.removeItem(PRODUCTS_CACHE_KEY);
+  localStorage.removeItem(CATS_CACHE_KEY);
+}
+
 interface ProductContextType {
   menuItems: MenuItem[];
   categorias: Category[];
@@ -31,23 +54,24 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const { notify } = useUI();
   const { isAdminMode } = useAuth();
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
-    const saved = localStorage.getItem('db_menuItems');
-    return saved ? JSON.parse(saved) : INITIAL_MENU;
+    const cached = readCache<MenuItem[]>(PRODUCTS_CACHE_KEY);
+    if (cached) return cached;
+    try { const old = localStorage.getItem('db_menuItems'); return old ? JSON.parse(old) : INITIAL_MENU; } catch { return INITIAL_MENU; }
   });
   const [categorias, setCategorias] = useState<Category[]>(() => {
-    const saved = localStorage.getItem('db_categorias');
-    return saved ? JSON.parse(saved) : INITIAL_CATEGORIAS;
+    const cached = readCache<Category[]>(CATS_CACHE_KEY);
+    if (cached) return cached;
+    try { const old = localStorage.getItem('db_categorias'); return old ? JSON.parse(old) : INITIAL_CATEGORIAS; } catch { return INITIAL_CATEGORIAS; }
   });
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
   const fetchData = useCallback(async (force = false) => {
     if (!supabase) return;
-    
-    // Verifica se já temos dados salvos e não ignora o cache
-    const cachedCats = localStorage.getItem('db_categorias');
-    const cachedItems = localStorage.getItem('db_menuItems');
-    if (!force && cachedCats && cachedItems) {
-      return; 
+
+    if (!force) {
+      const cachedItems = readCache<MenuItem[]>(PRODUCTS_CACHE_KEY);
+      const cachedCats = readCache<Category[]>(CATS_CACHE_KEY);
+      if (cachedItems && cachedCats) return; // Cache válido, sem consumo de bandwidth
     }
 
     setIsLoadingProducts(true);
@@ -59,11 +83,11 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (catsRes.data) {
         setCategorias(catsRes.data as Category[]);
-        localStorage.setItem('db_categorias', JSON.stringify(catsRes.data));
+        writeCache(CATS_CACHE_KEY, catsRes.data);
       }
       if (itemsRes.data) {
         setMenuItems(itemsRes.data as MenuItem[]);
-        localStorage.setItem('db_menuItems', JSON.stringify(itemsRes.data));
+        writeCache(PRODUCTS_CACHE_KEY, itemsRes.data);
       }
     } catch (err) {
       console.error("Fetch Error:", err);
@@ -88,7 +112,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       } else if (data) {
         setCategorias(prev => {
           const next = [...prev, data as Category];
-          localStorage.setItem('db_categorias', JSON.stringify(next));
+          writeCache(CATS_CACHE_KEY, next);
           return next;
         });
         notify('Categoria criada!');
@@ -96,14 +120,18 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     } else {
       setCategorias(prev => {
         const next = [...prev, { id: generateId(), ...newItem }];
-        localStorage.setItem('db_categorias', JSON.stringify(next));
+        writeCache(CATS_CACHE_KEY, next);
         return next;
       });
     }
   }, [notify]);
 
   const updateCategory = useCallback(async (id: string, updates: Partial<Category>) => {
-    setCategorias(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    setCategorias(prev => {
+      const next = prev.map(c => c.id === id ? { ...c, ...updates } : c);
+      writeCache(CATS_CACHE_KEY, next);
+      return next;
+    });
     if (supabase) {
       const { id: _, ...rest } = updates as any;
       await supabase.from('categorias').update(rest).eq('id', id);
@@ -115,7 +143,11 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       notify('Não é possível excluir categoria com produtos.', 'error');
       return;
     }
-    setCategorias(prev => prev.filter(c => c.id !== id));
+    setCategorias(prev => {
+      const next = prev.filter(c => c.id !== id);
+      writeCache(CATS_CACHE_KEY, next);
+      return next;
+    });
     if (supabase) {
       await supabase.from('categorias').delete().eq('id', id);
     }
@@ -129,7 +161,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       } else if (data) {
         setMenuItems(prev => {
           const next = [...prev, data as MenuItem];
-          localStorage.setItem('db_menuItems', JSON.stringify(next));
+          writeCache(PRODUCTS_CACHE_KEY, next);
           return next;
         });
         notify('Produto criado!');
@@ -137,14 +169,18 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     } else {
       setMenuItems(prev => {
         const next = [...prev, { id: generateId(), ...item }];
-        localStorage.setItem('db_menuItems', JSON.stringify(next));
+        writeCache(PRODUCTS_CACHE_KEY, next);
         return next;
       });
     }
   }, [notify]);
 
   const updateMenuItem = useCallback(async (id: string, updates: Partial<MenuItem>) => {
-    setMenuItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
+    setMenuItems(prev => {
+      const next = prev.map(i => i.id === id ? { ...i, ...updates } : i);
+      writeCache(PRODUCTS_CACHE_KEY, next); // Atualiza cache com novo valor
+      return next;
+    });
     if (supabase) {
       const { id: _, ...rest } = updates as any;
       await supabase.from('menuItems').update(rest).eq('id', id);
@@ -152,7 +188,11 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const removeMenuItem = useCallback(async (id: string) => {
-    setMenuItems(prev => prev.filter(i => i.id !== id));
+    setMenuItems(prev => {
+      const next = prev.filter(i => i.id !== id);
+      writeCache(PRODUCTS_CACHE_KEY, next);
+      return next;
+    });
     if (supabase) {
       await supabase.from('menuItems').delete().eq('id', id);
     }
@@ -169,7 +209,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateCategory,
       removeCategory,
       isLoadingProducts,
-      refreshProducts: () => fetchData(true)
+      refreshProducts: fetchData
     }}>
       {children}
     </ProductContext.Provider>

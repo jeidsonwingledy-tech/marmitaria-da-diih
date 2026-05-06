@@ -62,11 +62,21 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const cartTotal = useMemo(() => {
     return cart.reduce((acc, item) => {
-      let itemPrice = item.price;
-      (Object.values(item.selectedOptions) as ProductOption[][]).forEach(groupOptions => {
-        groupOptions.forEach(opt => itemPrice += opt.price);
-      });
-      return acc + (itemPrice * item.quantity);
+      let basePrice = item.price;
+      let addonsTotal = 0;
+      
+      if (item.optionGroups) {
+        item.optionGroups.forEach(group => {
+          const selected = (item.selectedOptions[group.id] || []);
+          selected.forEach(opt => { addonsTotal += opt.price; });
+        });
+      } else {
+        // Fallback: sum all options if no optionGroups metadata
+        (Object.values(item.selectedOptions) as ProductOption[][]).forEach(groupOptions => {
+          groupOptions.forEach(opt => { addonsTotal += opt.price; });
+        });
+      }
+      return acc + ((basePrice + addonsTotal) * item.quantity);
     }, 0);
   }, [cart]);
 

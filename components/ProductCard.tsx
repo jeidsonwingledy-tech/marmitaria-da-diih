@@ -47,14 +47,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
           </div>
           
           <div className="mt-2 flex items-center gap-3">
-            <span className="font-bold text-sm text-gray-800">
-              {item.price > 0 ? formatCurrency(item.price) : 'Consulte'}
-            </span>
-            {item.price === 0 && (
-              <span className="text-[10px] bg-red-50 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                Sob Consulta
-              </span>
-            )}
+            {(() => {
+              // If base price > 0, show it directly
+              if (item.price > 0) {
+                return <span className="font-bold text-sm text-gray-800">{formatCurrency(item.price)}</span>;
+              }
+              // If price = 0, check if there are radio option groups with prices (size variants)
+              const radioGroups = (item.optionGroups || []).filter(g => g.max === 1 && g.options.some(o => o.price > 0 && o.available !== false));
+              if (radioGroups.length > 0) {
+                const allPrices = radioGroups.flatMap(g => g.options.filter(o => o.available !== false && o.price > 0).map(o => o.price));
+                const minP = Math.min(...allPrices);
+                const maxP = Math.max(...allPrices);
+                return (
+                  <span className="font-bold text-sm text-gray-800">
+                    {minP === maxP ? formatCurrency(minP) : `${formatCurrency(minP)} - ${formatCurrency(maxP)}`}
+                  </span>
+                );
+              }
+              // Truly on-request product
+              return (
+                <>
+                  <span className="font-bold text-sm text-gray-800">Consulte</span>
+                  <span className="text-[10px] bg-red-50 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                    Sob Consulta
+                  </span>
+                </>
+              );
+            })()}
           </div>
         </div>
 

@@ -13,6 +13,7 @@ const Home = () => {
   const { isAdminMode } = useAuth();
   const { menuItems, categorias } = useProducts();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter items based on selected category or show all highlights
   const displayedCategories = categorias.filter(c => c.active);
@@ -70,9 +71,15 @@ const Home = () => {
 
       {/* iFood-style Search Bar Padding */}
       <div className="px-4 mt-6">
-        <div className="bg-gray-100 rounded-xl p-3 flex items-center gap-3 text-gray-400">
-          <Search size={20} />
-          <span className="text-sm">O que você quer comer?</span>
+        <div className="bg-gray-100 rounded-xl p-3 flex items-center gap-3 text-gray-500 focus-within:ring-2 focus-within:ring-primary focus-within:bg-white border border-transparent focus-within:border-primary transition-all shadow-sm">
+          <Search size={20} className="shrink-0" />
+          <input 
+            type="text" 
+            placeholder="O que você quer comer hoje?" 
+            className="bg-transparent border-none outline-none w-full text-sm text-gray-800 placeholder-gray-400"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
@@ -104,26 +111,42 @@ const Home = () => {
 
       {/* Featured / Menu Sections */}
       <div className="mt-6 px-4 space-y-10 pb-20">
-        {displayedCategories
-          .filter(cat => !selectedCategoryId || cat.id === selectedCategoryId)
-          .map((cat) => {
-            const items = menuItems.filter(i => i.categoryId === cat.id && i.available);
-            if (items.length === 0) return null;
+        {searchQuery.trim() ? (
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-gray-800">Resultados da Busca</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {menuItems
+                .filter(i => i.available && i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((item) => (
+                  <ProductCard key={item.id} item={item} />
+                ))}
+              {menuItems.filter(i => i.available && i.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                <p className="text-gray-500 text-sm text-center py-4">Nenhum produto encontrado.</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          displayedCategories
+            .filter(cat => !selectedCategoryId || cat.id === selectedCategoryId)
+            .map((cat) => {
+              const items = menuItems.filter(i => i.categoryId === cat.id && i.available);
+              if (items.length === 0) return null;
 
-            return (
-              <div key={cat.id} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-gray-800">{cat.name}</h3>
-                  <Link to="/cardapio" className="text-primary text-xs font-bold">Ver tudo</Link>
+              return (
+                <div key={cat.id} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-bold text-gray-800">{cat.name}</h3>
+                    <Link to="/cardapio" className="text-primary text-xs font-bold">Ver tudo</Link>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    {items.slice(0, selectedCategoryId ? 50 : 3).map((item) => (
+                      <ProductCard key={item.id} item={item} />
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
-                  {items.slice(0, selectedCategoryId ? 50 : 3).map((item) => (
-                    <ProductCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+        )}
       </div>
     </div>
   );

@@ -74,13 +74,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
   };
 
   const getTotalPrice = () => {
-    let total = item.price;
-    (Object.values(selectedOptions) as ProductOption[][]).forEach(options => {
-      options.forEach(opt => {
-        total += opt.price;
-      });
-    });
-    return total * quantity;
+    // Start with base price. If a radio group (max=1, size-type) is selected,
+    // its option price REPLACES the base price instead of adding to it.
+    let basePrice = item.price;
+    let addonsTotal = 0;
+
+    if (item.optionGroups) {
+      for (const group of item.optionGroups) {
+        const selected = selectedOptions[group.id] || [];
+        selected.forEach(opt => { addonsTotal += opt.price; });
+      }
+    }
+
+    return (basePrice + addonsTotal) * quantity;
   };
 
   const handleAddToCart = () => {
@@ -175,7 +181,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
                             <span className={`text-sm ${isSelected ? 'font-bold text-gray-900' : 'text-gray-700'}`}>{option.name}</span>
                           </div>
                           <span className="text-sm font-medium text-gray-600">
-                            {option.price > 0 ? `+${formatCurrency(option.price)}` : 'Grátis'}
+                            {option.price > 0 ? (item.price === 0 ? formatCurrency(option.price) : `+${formatCurrency(option.price)}`) : 'Grátis'}
                           </span>
                           <input
                             type="checkbox"
