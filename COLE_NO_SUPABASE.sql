@@ -91,6 +91,7 @@ values (
 -- 8. Dados Iniciais - Categorias
 insert into categorias (id, name, image, active) values
   ('pratododia', 'Prato do Dia', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&h=300&q=80', true),
+  ('montemarmita', 'Monte sua Marmita', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&h=300&q=80', true),
   ('marmitas', 'Marmitas', 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=300&h=300&q=80', true),
   ('fit', 'Linha Fit', 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=300&h=300&q=80', true),
   ('drinks', 'Bebidas', 'https://images.unsplash.com/photo-1544145945-f904253d0c7b?auto=format&fit=crop&w=300&h=300&q=80', true),
@@ -99,6 +100,9 @@ on conflict (id) do nothing;
 
 -- 9. Dados Iniciais - Produtos
 insert into "menuItems" (id, "categoryId", name, description, price, images, "optionGroups", available) values
+  ('monte-1', 'montemarmita', 'Monte sua Marmita', 'Arroz, feijão e escolha até 2 misturas da nossa seleção do dia. Acompanha salada e farofa da casa.', 18.90,
+   ARRAY['https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'],
+   '[{"id":"proteinas","title":"Escolha as Proteínas","required":true,"min":1,"max":2,"options":[{"id":"frango","name":"Frango Grelhado","price":0,"available":true},{"id":"carne","name":"Carne Moída","price":0,"available":true},{"id":"bife","name":"Bife Acebolado","price":2,"available":true},{"id":"peixe","name":"Peixe Grelhado","price":3,"available":true},{"id":"linguica","name":"Linguiça Toscana","price":0,"available":true}]}]'::jsonb, true),
   ('1', 'marmitas', 'Bife Acebolado', 'Arroz branco soltinho, feijão carioca, bife de alcatra acebolado, fritas e farofa da casa.', 22.90,
    ARRAY['https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'],
    '[{"id":"size","title":"Tamanho","required":true,"min":1,"max":1,"options":[{"id":"p","name":"Pequena","price":0,"available":true},{"id":"m","name":"Média","price":4,"available":true},{"id":"g","name":"Grande","price":7,"available":true}]}]'::jsonb, true),

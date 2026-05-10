@@ -98,7 +98,8 @@ const Admin = () => {
 
   // Menu Item Form State
   const [isAddingItem, setIsAddingItem] = useState(false);
-  const defaultNewItem: Partial<MenuItem> = { categoryId: categorias[0]?.id || '', name: '', description: '', price: 0, images: [], optionGroups: [], available: true };
+  const getDefaultCategoryId = () => categorias.find(c => c.active)?.id || categorias[0]?.id || '';
+  const defaultNewItem: Partial<MenuItem> = { categoryId: getDefaultCategoryId(), name: '', description: '', price: 0, images: [], optionGroups: [], available: true };
   const [newItem, setNewItem] = useState<Partial<MenuItem>>(defaultNewItem);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
@@ -169,12 +170,13 @@ const Admin = () => {
   };
 
   // --- MENU ITEM LOGIC ---
-  const handleSaveItem = (e: React.FormEvent) => {
+  const handleSaveItem = async (e: React.FormEvent) => {
     e.preventDefault();
     let itemToSave = { ...(editingItem || newItem) };
 
-    // Inject Tamanhos if it's a Marmita
-    const isMarmita = categorias.find(c => c.id === itemToSave.categoryId)?.name?.toLowerCase().includes('marmita');
+    // Inject Tamanhos if it's a Marmita (exceto Monte sua Marmita)
+    const catName = categorias.find(c => c.id === itemToSave.categoryId)?.name?.toLowerCase() || '';
+    const isMarmita = catName.includes('marmita') && !catName.includes('monte');
     if (isMarmita && marmitaPriceP !== '' && marmitaPriceM !== '') {
       itemToSave.price = 0; // Base price
       let optionGroups = [...(itemToSave.optionGroups || [])];
@@ -200,19 +202,30 @@ const Admin = () => {
       itemToSave.optionGroups = optionGroups;
     }
 
-    if (itemToSave.name && itemToSave.categoryId && itemToSave.price !== undefined && !Number.isNaN(itemToSave.price)) {
-      const images = (itemToSave.images && itemToSave.images.length > 0) ? itemToSave.images : ['https://via.placeholder.com/150'];
-      if (editingItem) {
-        updateMenuItem(editingItem.id, { ...itemToSave, images } as MenuItem);
-        setEditingItem(null);
-        notify('Produto atualizado!');
-      } else {
-        addMenuItem({ ...itemToSave, images } as Omit<MenuItem, 'id'>);
-        setNewItem(defaultNewItem);
+    // Normalizar preço: garantir que não seja NaN
+    if (itemToSave.price === undefined || Number.isNaN(itemToSave.price)) {
+      itemToSave.price = 0;
+    }
+
+    if (itemToSave.name && itemToSave.categoryId) {
+      const images = (itemToSave.images && itemToSave.images.length > 0) ? itemToSave.images : ['https://placehold.co/300x300?text=Sem+Foto'];
+      try {
+        if (editingItem) {
+          await updateMenuItem(editingItem.id, { ...itemToSave, images } as MenuItem);
+          setEditingItem(null);
+          notify('Produto atualizado!');
+        } else {
+          await addMenuItem({ ...itemToSave, images } as Omit<MenuItem, 'id'>);
+          setNewItem({ ...defaultNewItem, categoryId: getDefaultCategoryId() });
+          notify('Produto criado com sucesso!');
+        }
+        setIsAddingItem(false);
+      } catch (err) {
+        console.error('Erro ao salvar produto:', err);
+        notify('Erro ao salvar produto. Tente novamente.', 'error');
       }
-      setIsAddingItem(false);
     } else {
-      notify('Preencha os campos obrigatórios.', 'error');
+      notify('Preencha o nome e a categoria do produto.', 'error');
     }
   };
 
@@ -220,7 +233,8 @@ const Admin = () => {
   const handleEditItem = (item: MenuItem) => {
     setEditingItem(item);
     setIsAddingItem(false);
-    const isMarmita = categorias.find(c => c.id === item.categoryId)?.name?.toLowerCase().includes('marmita');
+    const catName = categorias.find(c => c.id === item.categoryId)?.name?.toLowerCase() || '';
+    const isMarmita = catName.includes('marmita') && !catName.includes('monte');
     const sizeGroup = item.optionGroups.find(g => g.title === 'Tamanhos');
     if (isMarmita && sizeGroup) {
       setMarmitaPriceP(sizeGroup.options.find(o => o.name === 'P')?.price ?? '');
@@ -234,7 +248,7 @@ const Admin = () => {
 
   const handleAddNewItem = () => {
     setEditingItem(null);
-    setNewItem(defaultNewItem);
+    setNewItem({ ...defaultNewItem, categoryId: getDefaultCategoryId() });
     setIsAddingItem(!isAddingItem);
     setMarmitaPriceP('');
     setMarmitaPriceM('');
@@ -599,31 +613,44 @@ const Admin = () => {
                   <textarea placeholder="Descrição" value={currentFormItem.description || ''} onChange={e => setCurrentFormItem({ ...currentFormItem, description: e.target.value })} className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none h-20 resize-none" />
 
                   {/* Price */}
-                  {categorias.find(c => c.id === currentFormItem.categoryId)?.name?.toLowerCase().includes('marmita') ? (
-                    <div className="grid grid-cols-2 gap-3">
+                  {(() => {
+                    const selCatName = categorias.find(c => c.id === currentFormItem.categoryId)?.name?.toLowerCase() || '';
+                    const isMarmitaCat = selCatName.includes('marmita') && !selCatName.includes('monte');
+                    const isMontecat = selCatName.includes('monte');
+                    if (isMarmitaCat) {
+                      return (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Preço P (R$)</label>
+                            <input type="number" step="0.01" min="0" placeholder="0.00" value={marmitaPriceP} onChange={e => setMarmitaPriceP(parseFloat(e.target.value) || '')} className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Preço M (R$)</label>
+                            <input type="number" step="0.01" min="0" placeholder="0.00" value={marmitaPriceM} onChange={e => setMarmitaPriceM(parseFloat(e.target.value) || '')} className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary" />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
                       <div>
-                         <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Preço P (R$)</label>
-                         <input type="number" step="0.01" min="0" placeholder="0.00" value={marmitaPriceP} onChange={e => setMarmitaPriceP(parseFloat(e.target.value) || '')} className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary" />
+                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">
+                          {isMontecat ? '🍱 Preço Base da Marmita (R$)' : 'Preço (R$)'}
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={currentFormItem.price !== undefined && !Number.isNaN(currentFormItem.price) ? currentFormItem.price : ''}
+                          onChange={e => setCurrentFormItem({ ...currentFormItem, price: parseFloat(e.target.value) || 0 })}
+                          className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        {isMontecat && (
+                          <p className="text-[10px] text-amber-600 mt-1">💡 Configure as proteínas nos Grupos de Opções abaixo (máx. 2 seleções)</p>
+                        )}
                       </div>
-                      <div>
-                         <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Preço M (R$)</label>
-                         <input type="number" step="0.01" min="0" placeholder="0.00" value={marmitaPriceM} onChange={e => setMarmitaPriceM(parseFloat(e.target.value) || '')} className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Preço (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={currentFormItem.price !== undefined && !Number.isNaN(currentFormItem.price) ? currentFormItem.price : ''}
-                        onChange={e => setCurrentFormItem({ ...currentFormItem, price: parseFloat(e.target.value) })}
-                        className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Option Groups */}
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">

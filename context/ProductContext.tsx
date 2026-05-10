@@ -6,8 +6,8 @@ import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { generateId } from '../utils/formatters';
 
-const PRODUCTS_CACHE_KEY = 'db_menuItems_v2';
-const CATS_CACHE_KEY = 'db_categorias_v2';
+const PRODUCTS_CACHE_KEY = 'db_menuItems_v3';
+const CATS_CACHE_KEY = 'db_categorias_v3';
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos
 
 function readCache<T>(key: string): T | null {

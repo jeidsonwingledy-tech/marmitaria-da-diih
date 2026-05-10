@@ -43,6 +43,7 @@ export const INITIAL_RESTAURANT_INFO: RestaurantInfo = {
 
 export const INITIAL_CATEGORIAS: Category[] = [
   { id: 'pratododia', name: 'Prato do Dia', image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&h=300&q=80', active: true },
+  { id: 'montemarmita', name: 'Monte sua Marmita', image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&h=300&q=80', active: true },
   { id: 'marmitas', name: 'Marmitas', image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=300&h=300&q=80', active: true },
   { id: 'fit', name: 'Linha Fit', image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=300&h=300&q=80', active: true },
   { id: 'drinks', name: 'Bebidas', image: 'https://images.unsplash.com/photo-1544145945-f904253d0c7b?auto=format&fit=crop&w=300&h=300&q=80', active: true },
@@ -50,6 +51,32 @@ export const INITIAL_CATEGORIAS: Category[] = [
 ];
 
 export const INITIAL_MENU: MenuItem[] = [
+  // Monte sua Marmita
+  {
+    id: 'monte-1',
+    categoryId: 'montemarmita',
+    name: 'Monte sua Marmita',
+    description: 'Arroz, feijão e escolha até 2 misturas da nossa seleção do dia. Acompanha salada e farofa da casa.',
+    price: 18.90,
+    images: ['https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'],
+    available: true,
+    optionGroups: [
+      {
+        id: 'proteinas',
+        title: 'Escolha as Proteínas',
+        required: true,
+        min: 1,
+        max: 2,
+        options: [
+          { id: 'frango', name: 'Frango Grelhado', price: 0, available: true },
+          { id: 'carne', name: 'Carne Moída', price: 0, available: true },
+          { id: 'bife', name: 'Bife Acebolado', price: 2.00, available: true },
+          { id: 'peixe', name: 'Peixe Grelhado', price: 3.00, available: true },
+          { id: 'linguica', name: 'Linguiça Toscana', price: 0, available: true },
+        ]
+      }
+    ]
+  },
   // Marmitas
   {
     id: '1',
