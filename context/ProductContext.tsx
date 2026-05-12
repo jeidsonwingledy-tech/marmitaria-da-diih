@@ -155,9 +155,21 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const addMenuItem = useCallback(async (item: Omit<MenuItem, 'id'>) => {
     if (supabase) {
-      const { data, error } = await supabase.from('menuItems').insert(item).select('id, categoryId, name, description, price, available, images, optionGroups').single();
+      const payload = {
+        categoryId: item.categoryId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        images: item.images,
+        optionGroups: item.optionGroups,
+        available: item.available
+      };
+      
+      const { data, error } = await supabase.from('menuItems').insert(payload).select('id, categoryId, name, description, price, available, images, optionGroups').single();
       if (error) {
-        notify('Erro: ' + error.message, 'error');
+        console.error("Supabase insert error:", error);
+        notify('Erro ao salvar produto: ' + error.message, 'error');
+        throw new Error(error.message);
       } else if (data) {
         setMenuItems(prev => {
           const next = [...prev, data as MenuItem];
@@ -182,10 +194,23 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       return next;
     });
     if (supabase) {
-      const { id: _, ...rest } = updates as any;
-      await supabase.from('menuItems').update(rest).eq('id', id);
+      const payload: any = {};
+      if (updates.categoryId !== undefined) payload.categoryId = updates.categoryId;
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.price !== undefined) payload.price = updates.price;
+      if (updates.images !== undefined) payload.images = updates.images;
+      if (updates.optionGroups !== undefined) payload.optionGroups = updates.optionGroups;
+      if (updates.available !== undefined) payload.available = updates.available;
+
+      const { error } = await supabase.from('menuItems').update(payload).eq('id', id);
+      if (error) {
+        console.error("Supabase update error:", error);
+        notify('Erro ao atualizar: ' + error.message, 'error');
+        throw new Error(error.message);
+      }
     }
-  }, []);
+  }, [notify]);
 
   const removeMenuItem = useCallback(async (id: string) => {
     setMenuItems(prev => {

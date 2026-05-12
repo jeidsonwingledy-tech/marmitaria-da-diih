@@ -462,12 +462,20 @@ const Admin = () => {
                   </div>
 
                   <div className="border-t border-b border-gray-50 py-3 my-3 space-y-2">
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-sm">
-                        <span className="text-gray-600"><span className="font-bold text-gray-800">{item.quantity}x</span> {item.name}</span>
-                        <span className="text-gray-500">{formatCurrency(item.price * item.quantity)}</span>
-                      </div>
-                    ))}
+                    {order.items.map((item, idx) => {
+                      let itemTotal = item.price;
+                      if (item.selectedOptions) {
+                        Object.values(item.selectedOptions).forEach(groupOptions => {
+                          groupOptions.forEach(opt => { itemTotal += opt.price || 0; });
+                        });
+                      }
+                      return (
+                        <div key={idx} className="flex justify-between text-sm">
+                          <span className="text-gray-600"><span className="font-bold text-gray-800">{item.quantity}x</span> {item.name}</span>
+                          <span className="text-gray-500">{formatCurrency(itemTotal * item.quantity)}</span>
+                        </div>
+                      );
+                    })}
                     {order.deliveryFee > 0 && (
                       <div className="flex justify-between text-sm text-gray-500 pt-1">
                         <span>Taxa de Entrega</span>
