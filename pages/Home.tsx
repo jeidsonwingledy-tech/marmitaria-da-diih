@@ -27,6 +27,7 @@ const Home = () => {
           alt="Banner" 
           onUpdate={(img) => updateRestaurantInfo({ banner: img })}
           className="w-full h-full object-cover"
+          editable={false}
         />
         <div className="absolute inset-0 bg-black/20" />
       </div>
@@ -41,6 +42,7 @@ const Home = () => {
                 alt="Logo" 
                 onUpdate={(img) => updateRestaurantInfo({ logo: img })}
                 className="w-full h-full object-cover"
+                editable={false}
               />
             </div>
             <div className="flex-1">

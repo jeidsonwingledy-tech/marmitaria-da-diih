@@ -48,22 +48,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
           
           <div className="mt-2 flex items-center gap-3">
             {(() => {
-              // If base price > 0, show it directly
-              if (item.price > 0) {
-                return <span className="font-bold text-sm text-gray-800">{formatCurrency(item.price)}</span>;
+              const allRequired = (item.optionGroups || []).filter(g => g.required && g.max === 1);
+              
+              // Find "Tamanhos" group specifically to match the Admin Area's expectation
+              const sizeGroup = allRequired.find(g => g.title.toLowerCase().includes('tamanho'));
+              
+              let minP = item.price;
+              let maxP = item.price;
+
+              if (sizeGroup) {
+                const prices = sizeGroup.options.filter(o => o.available !== false).map(o => o.price);
+                if (prices.length > 0) {
+                  minP += Math.min(...prices);
+                  maxP += Math.max(...prices);
+                }
+              } else {
+                // Sum all required groups if no dedicated Size group is found
+                allRequired.forEach(g => {
+                  const prices = g.options.filter(o => o.available !== false).map(o => o.price);
+                  if (prices.length > 0) {
+                    minP += Math.min(...prices);
+                    maxP += Math.max(...prices);
+                  }
+                });
               }
-              // If price = 0, check if there are radio option groups with prices (size variants)
-              const radioGroups = (item.optionGroups || []).filter(g => g.max === 1 && g.options.some(o => o.price > 0 && o.available !== false));
-              if (radioGroups.length > 0) {
-                const allPrices = radioGroups.flatMap(g => g.options.filter(o => o.available !== false && o.price > 0).map(o => o.price));
-                const minP = Math.min(...allPrices);
-                const maxP = Math.max(...allPrices);
+
+              if (minP > 0 || maxP > 0) {
                 return (
                   <span className="font-bold text-sm text-gray-800">
                     {minP === maxP ? formatCurrency(minP) : `${formatCurrency(minP)} - ${formatCurrency(maxP)}`}
                   </span>
                 );
               }
+              
               // Truly on-request product
               return (
                 <>
@@ -84,6 +101,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
             alt={item.name}
             onUpdate={handleImageUpdate}
             className="w-full h-full object-cover"
+            editable={false}
           />
           <div className="absolute bottom-1 right-1">
              <div className="bg-white shadow-sm p-1.5 rounded-full text-primary hover:scale-110 transition-transform">
