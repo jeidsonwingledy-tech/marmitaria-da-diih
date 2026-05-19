@@ -41,6 +41,7 @@ const Admin = () => {
     menuItems,
     addMenuItem,
     updateMenuItem,
+    removeMenuItem,
     categorias,
     addCategory,
     updateCategory,
@@ -728,6 +729,9 @@ const Admin = () => {
                     </button>
                     <button onClick={() => handleEditItem(item)} className="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
                       <Edit3 size={20} />
+                    </button>
+                    <button onClick={() => { if(window.confirm('Tem certeza que deseja excluir este produto?')) removeMenuItem(item.id); }} className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                      <Trash2 size={20} />
                     </button>
                   </div>
                 </div>

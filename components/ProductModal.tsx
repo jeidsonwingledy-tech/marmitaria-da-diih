@@ -156,8 +156,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
                   <div>
                     <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide">{group.title}</h3>
                     <p className="text-xs text-gray-500">
-                      {group.required ? 'Obrigatório' : 'Opcional'} •
-                      {group.max === 1 ? ' Escolha 1' : ` Max ${group.max}`}
+                      {(group.required === true || String(group.required) === 'true') ? 'Obrigatório' : 'Opcional'} •
+                      {Number(group.max) === 1 ? ' Escolha 1' : ` Max ${group.max}`}
                     </p>
                   </div>
                   {group.required && !(selectedOptions[group.id]?.length >= group.min) && (
@@ -167,7 +167,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
 
                 <div className="space-y-2">
                   {availableOptions.map(option => {
-                    const isRadio = group.max === 1;
+                    const isRadio = Number(group.max) === 1;
                     const optionCount = (selectedOptions[group.id] || []).filter(o => o.id === option.id).length;
                     const isSelected = optionCount > 0;
                     
