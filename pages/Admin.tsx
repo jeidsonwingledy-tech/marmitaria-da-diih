@@ -415,20 +415,8 @@ const Admin = () => {
 
         {/* TAB: DASHBOARD */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-4">
-            <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-              <h2 className="font-bold text-gray-800 text-lg mb-4">Status do Restaurante</h2>
-              <button 
-                onClick={() => updateRestaurantInfo({ isOpen: !restaurantInfo.isOpen })}
-                className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${restaurantInfo.isOpen ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-red-500 text-white shadow-lg shadow-red-200'}`}
-              >
-                <Power size={24} />
-                {restaurantInfo.isOpen ? 'Restaurante Aberto (Pausar Pedidos)' : 'Restaurante Fechado (Abrir)'}
-              </button>
-              <p className="text-xs text-gray-500 mt-3">
-                {restaurantInfo.isOpen ? 'Os clientes podem ver o cardápio e fazer pedidos normalmente.' : 'Os clientes não poderão fazer pedidos. O cardápio ficará apenas para visualização.'}
-              </p>
-            </div>
+          <div className="text-center text-gray-500 mt-10">
+            <p>Selecione uma opção acima para gerenciar.</p>
           </div>
         )}
 
@@ -929,6 +917,121 @@ with check ( bucket_id = 'images' );`}
                 </div>
               </div>
               <p className="text-[10px] text-red-400 mt-2">Essas credenciais serão solicitadas ao entrar no painel.</p>
+            </div>
+
+            {/* Horário de Funcionamento Control */}
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-orange-100">
+              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">🕒 Horário e Funcionamento</h3>
+              
+              <div className="space-y-4">
+                {/* Manual Force Close Toggle */}
+                <div className="flex items-center justify-between p-3 border border-red-100 rounded-xl bg-red-50/50">
+                  <div>
+                    <h4 className="font-bold text-sm text-red-800">Forçar Fechamento Manual</h4>
+                    <p className="text-[10px] text-red-500">Fecha o estabelecimento imediatamente, independente do horário.</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => updateRestaurantInfo({ 
+                      notice: { 
+                        ...(restaurantInfo.notice || { active: true, text: '' }), 
+                        isClosedForced: !restaurantInfo.notice?.isClosedForced 
+                      } 
+                    })} 
+                    className={`w-12 h-7 rounded-full p-1 transition-colors flex items-center cursor-pointer relative ${restaurantInfo.notice?.isClosedForced ? 'bg-red-500 justify-end' : 'bg-gray-300 justify-start'}`}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white shadow-sm absolute pointer-events-none transition-all duration-300" style={{ left: restaurantInfo.notice?.isClosedForced ? 'calc(100% - 24px)' : '4px' }} />
+                  </button>
+                </div>
+
+                {/* Enable Auto Business Hours */}
+                <div className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50">
+                  <div>
+                    <h4 className="font-bold text-sm text-gray-800">Controle de Horário Automático</h4>
+                    <p className="text-[10px] text-gray-500">Bloqueia pedidos fora do horário programado.</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => updateRestaurantInfo({ 
+                      notice: { 
+                        ...(restaurantInfo.notice || { active: true, text: '' }), 
+                        businessHoursEnabled: !restaurantInfo.notice?.businessHoursEnabled 
+                      } 
+                    })} 
+                    className={`w-12 h-7 rounded-full p-1 transition-colors flex items-center cursor-pointer relative ${restaurantInfo.notice?.businessHoursEnabled ? 'bg-green-500 justify-end' : 'bg-gray-300 justify-start'}`}
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white shadow-sm absolute pointer-events-none transition-all duration-300" style={{ left: restaurantInfo.notice?.businessHoursEnabled ? 'calc(100% - 24px)' : '4px' }} />
+                  </button>
+                </div>
+
+                {/* Time Inputs (only shown if Auto Business Hours is enabled) */}
+                {restaurantInfo.notice?.businessHoursEnabled && (
+                  <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100 animate-in slide-in-from-top-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Abertura</label>
+                      <input 
+                        type="time" 
+                        value={restaurantInfo.notice?.businessHoursStart || '10:30'} 
+                        onChange={e => updateRestaurantInfo({ 
+                          notice: { 
+                            ...(restaurantInfo.notice || { active: true, text: '' }), 
+                            businessHoursStart: e.target.value 
+                          } 
+                        })} 
+                        className="w-full p-2 border border-gray-200 rounded-lg mt-1 bg-white text-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Fechamento</label>
+                      <input 
+                        type="time" 
+                        value={restaurantInfo.notice?.businessHoursEnd || '14:30'} 
+                        onChange={e => updateRestaurantInfo({ 
+                          notice: { 
+                            ...(restaurantInfo.notice || { active: true, text: '' }), 
+                            businessHoursEnd: e.target.value 
+                          } 
+                        })} 
+                        className="w-full p-2 border border-gray-200 rounded-lg mt-1 bg-white text-sm" 
+                      />
+                    </div>
+
+                    <div className="col-span-2 pt-2">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Dias de Funcionamento</label>
+                      <div className="flex gap-1 justify-between">
+                        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((dayName, idx) => {
+                          const days = restaurantInfo.notice?.businessHoursDays || [1, 2, 3, 4, 5, 6];
+                          const isActive = days.includes(idx);
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                const newDays = isActive 
+                                  ? days.filter(d => d !== idx)
+                                  : [...days, idx];
+                                updateRestaurantInfo({
+                                  notice: {
+                                    ...(restaurantInfo.notice || { active: true, text: '' }),
+                                    businessHoursDays: newDays
+                                  }
+                                });
+                              }}
+                              className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center transition-colors ${
+                                isActive 
+                                  ? 'bg-red-500 text-white' 
+                                  : 'bg-white border border-gray-200 text-gray-400 hover:border-gray-300'
+                              }`}
+                            >
+                              {dayName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Store Info */}

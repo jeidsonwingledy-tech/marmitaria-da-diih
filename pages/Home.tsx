@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Star, Clock, ChevronRight, Search } from 'lucide-react';
 import { useUI } from '../context/UIContext';
+import { isRestaurantOpen } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { useProducts } from '../context/ProductContext';
 import { ImageEditable } from '../components/ui/ImageEditable';
@@ -64,11 +65,14 @@ const Home = () => {
               <span>{restaurantInfo.businessHours || "10:30 - 14:30"}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              {restaurantInfo.isOpen ? (
-                <span className="text-green-600 font-bold uppercase">Aberto</span>
-              ) : (
-                <span className="text-red-500 font-bold uppercase">Fechado</span>
-              )}
+              {(() => {
+                const openStatus = isRestaurantOpen(restaurantInfo);
+                return openStatus.isOpen ? (
+                  <span className="text-green-600 font-bold uppercase">Aberto</span>
+                ) : (
+                  <span className="text-red-500 font-bold uppercase">Fechado</span>
+                );
+              })()}
               <ChevronRight size={14} />
             </div>
           </div>

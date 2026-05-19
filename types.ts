@@ -76,7 +76,6 @@ export interface RestaurantInfo {
   pixCity: string; // New
   
   businessHours: string;
-  isOpen: boolean; // New
   
   delivery: DeliveryConfig; // New
   style: StyleConfig; // New
@@ -84,6 +83,11 @@ export interface RestaurantInfo {
   notice: {
     active: boolean;
     text: string;
+    businessHoursEnabled?: boolean;
+    businessHoursStart?: string;
+    businessHoursEnd?: string;
+    businessHoursDays?: number[];
+    isClosedForced?: boolean;
   }; // New
 }
 

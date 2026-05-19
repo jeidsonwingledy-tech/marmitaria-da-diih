@@ -4,7 +4,7 @@ import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, Copy, Check, Calculator, Qr
 import { useCart } from '../context/CartContext';
 import { useUI } from '../context/UIContext';
 import { useOrders } from '../context/OrderContext';
-import { formatCurrency, generatePixString } from '../utils/formatters';
+import { formatCurrency, generatePixString, isRestaurantOpen } from '../utils/formatters';
 import { OrderDetails, ProductOption, CartItem } from '../types';
 import QRCode from 'react-qr-code';
 
@@ -113,6 +113,12 @@ const Cart = () => {
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const openStatus = isRestaurantOpen(restaurantInfo);
+    if (!openStatus.isOpen) {
+      notify(openStatus.reason || 'Estabelecimento fechado no momento.', 'error');
+      return;
+    }
 
     const currentNeighborhood = useSecondaryAddress ? formData.neighborhood2 : formData.neighborhood;
     const currentAddress = useSecondaryAddress ? formData.address2 : formData.address;
@@ -555,19 +561,44 @@ _Pedido feito pelo site Marmitaria da Diih_`;
       </div>
       <div className="fixed bottom-20 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-30">
         <div className="max-w-md mx-auto">
-          <div className="flex justify-between items-center mb-4"><span className="text-gray-500 font-medium">Subtotal</span><span className="text-2xl font-bold text-gray-900">{formatCurrency(cartTotal)}</span></div>
-          <button 
-            onClick={() => setStep('checkout')} 
-            disabled={!restaurantInfo.isOpen}
-            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-transform ${restaurantInfo.isOpen ? 'text-white hover:opacity-90 active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`} 
-            style={restaurantInfo.isOpen ? { backgroundColor: 'var(--color-primary)' } : {}}
-          >
-            {restaurantInfo.isOpen ? (
-              <>Continuar para Entrega <ArrowRight size={20} /></>
-            ) : (
-              'Restaurante Fechado'
-            )}
-          </button>
+          {(() => {
+            const openStatus = isRestaurantOpen(restaurantInfo);
+            return (
+              <>
+                {!openStatus.isOpen && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl mb-4 text-xs font-semibold text-center animate-pulse">
+                    ⚠️ {openStatus.reason}
+                  </div>
+                )}
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-gray-500 font-medium">Subtotal</span>
+                  <span className="text-2xl font-bold text-gray-900">{formatCurrency(cartTotal)}</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (!openStatus.isOpen) {
+                      notify(openStatus.reason || 'Estabelecimento fechado no momento.', 'error');
+                      return;
+                    }
+                    setStep('checkout');
+                  }} 
+                  disabled={!openStatus.isOpen}
+                  className={`w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all ${
+                    openStatus.isOpen 
+                      ? 'hover:opacity-90 active:scale-95' 
+                      : 'opacity-50 cursor-not-allowed shadow-none'
+                  }`} 
+                  style={{ backgroundColor: openStatus.isOpen ? 'var(--color-primary)' : '#9CA3AF' }}
+                >
+                  {openStatus.isOpen ? (
+                    <>Continuar para Entrega <ArrowRight size={20} /></>
+                  ) : (
+                    'Estabelecimento Fechado'
+                  )}
+                </button>
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

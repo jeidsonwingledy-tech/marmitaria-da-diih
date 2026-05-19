@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MenuItem, ProductOption } from '../types';
 import { useCart } from '../context/CartContext';
 import { useUI } from '../context/UIContext';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, isRestaurantOpen } from '../utils/formatters';
 
 interface ProductModalProps {
   item: MenuItem;
@@ -241,46 +241,70 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
             </div>
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            disabled={!isValid || isAdded || !restaurantInfo.isOpen}
-            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${!restaurantInfo.isOpen
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : isAdded
-                ? 'bg-green-500 text-white'
-                : isValid ? 'bg-primary text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-          >
-            <AnimatePresence mode="wait">
-              {!restaurantInfo.isOpen ? (
-                <motion.div key="closed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                  <span>Restaurante Fechado</span>
-                </motion.div>
-              ) : isAdded ? (
-                <motion.div
-                  key="check"
-                  initial={{ scale: 0, rotate: -45 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0 }}
-                  className="flex items-center gap-2"
-                >
-                  <Check size={24} strokeWidth={3} />
-                  <span>Adicionado!</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="add"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center gap-2"
-                >
-                  <ShoppingBag size={20} />
-                  <span>Adicionar • {formatCurrency(getTotalPrice())}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </button>
+          {(() => {
+            const openStatus = isRestaurantOpen(restaurantInfo);
+            const canAdd = isValid && openStatus.isOpen && !isAdded;
+            
+            return (
+              <button
+                onClick={handleAddToCart}
+                disabled={!canAdd}
+                className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all ${
+                  isAdded
+                    ? 'bg-green-500 text-white active:scale-95'
+                    : !openStatus.isOpen
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : isValid 
+                    ? 'bg-primary text-white hover:bg-red-700 active:scale-95' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                style={{ 
+                  backgroundColor: isAdded 
+                    ? '#22C55E' 
+                    : !openStatus.isOpen 
+                    ? '#9CA3AF' 
+                    : isValid 
+                    ? 'var(--color-primary)' 
+                    : '#D1D5DB' 
+                }}
+              >
+                <AnimatePresence mode="wait">
+                  {!openStatus.isOpen ? (
+                    <motion.div 
+                      key="closed" 
+                      initial={{ opacity: 0 }} 
+                      animate={{ opacity: 1 }} 
+                      className="flex items-center gap-2"
+                    >
+                      <span>Fechado no momento</span>
+                    </motion.div>
+                  ) : isAdded ? (
+                    <motion.div
+                      key="check"
+                      initial={{ scale: 0, rotate: -45 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0 }}
+                      className="flex items-center gap-2"
+                    >
+                      <Check size={24} strokeWidth={3} />
+                      <span>Adicionado!</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="add"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-2"
+                    >
+                      <ShoppingBag size={20} />
+                      <span>Adicionar • {formatCurrency(getTotalPrice())}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>

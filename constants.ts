@@ -16,7 +16,6 @@ export const INITIAL_RESTAURANT_INFO: RestaurantInfo = {
   pixCity: "Amparo-SP",
 
   businessHours: "Segunda a Sábado: 10:30 às 14:30",
-  isOpen: true,
 
   delivery: {
     freeShippingThreshold: 150,

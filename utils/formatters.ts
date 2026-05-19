@@ -1,4 +1,4 @@
-import { CartItem } from "../types";
+import { CartItem, RestaurantInfo } from "../types";
 
 export const generateId = () => {
   try {
@@ -161,4 +161,50 @@ export const generateWhatsAppLink = (
   message += `Aguarde a confirmação!`;
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+};
+
+export const isRestaurantOpen = (info: RestaurantInfo): { isOpen: boolean; reason?: string } => {
+  const notice = info.notice || { active: false, text: '' };
+
+  if (notice.isClosedForced) {
+    return { isOpen: false, reason: "Estabelecimento fechado temporariamente (Fechado Manualmente)." };
+  }
+
+  if (!notice.businessHoursEnabled) {
+    return { isOpen: true }; // Se não estiver ativo o controle, fica sempre aberto
+  }
+
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const currentMinutesTotal = currentHour * 60 + currentMinute;
+
+  const activeDays = notice.businessHoursDays || [1, 2, 3, 4, 5, 6]; // Padrão: Segunda a Sábado
+  if (!activeDays.includes(currentDay)) {
+    return { isOpen: false, reason: `Hoje não abrimos. Funcionamos de ${info.businessHours}.` };
+  }
+
+  const start = notice.businessHoursStart || "10:30";
+  const end = notice.businessHoursEnd || "14:30";
+
+  const [startH, startM] = start.split(':').map(Number);
+  const [endH, endM] = end.split(':').map(Number);
+
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  let isOpen = false;
+  if (startMinutes <= endMinutes) {
+    isOpen = currentMinutesTotal >= startMinutes && currentMinutesTotal <= endMinutes;
+  } else {
+    // Caso o horário passe da meia-noite (ex: das 18:00 às 02:00 do dia seguinte)
+    isOpen = currentMinutesTotal >= startMinutes || currentMinutesTotal <= endMinutes;
+  }
+
+  if (!isOpen) {
+    return { isOpen: false, reason: `Estamos fechados no momento. Horário de atendimento: das ${start} às ${end}.` };
+  }
+
+  return { isOpen: true };
 };
