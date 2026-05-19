@@ -556,7 +556,18 @@ _Pedido feito pelo site Marmitaria da Diih_`;
       <div className="fixed bottom-20 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-30">
         <div className="max-w-md mx-auto">
           <div className="flex justify-between items-center mb-4"><span className="text-gray-500 font-medium">Subtotal</span><span className="text-2xl font-bold text-gray-900">{formatCurrency(cartTotal)}</span></div>
-          <button onClick={() => setStep('checkout')} className="w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:opacity-90 flex items-center justify-center gap-2 active:scale-95 transition-transform" style={{ backgroundColor: 'var(--color-primary)' }}>Continuar para Entrega <ArrowRight size={20} /></button>
+          <button 
+            onClick={() => setStep('checkout')} 
+            disabled={!restaurantInfo.isOpen}
+            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-transform ${restaurantInfo.isOpen ? 'text-white hover:opacity-90 active:scale-95' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`} 
+            style={restaurantInfo.isOpen ? { backgroundColor: 'var(--color-primary)' } : {}}
+          >
+            {restaurantInfo.isOpen ? (
+              <>Continuar para Entrega <ArrowRight size={20} /></>
+            ) : (
+              'Restaurante Fechado'
+            )}
+          </button>
         </div>
       </div>
     </div>

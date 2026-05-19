@@ -3,6 +3,7 @@ import { X, Minus, Plus, ShoppingBag, ChevronLeft, ChevronRight, Check } from 'l
 import { motion, AnimatePresence } from 'motion/react';
 import { MenuItem, ProductOption } from '../types';
 import { useCart } from '../context/CartContext';
+import { useUI } from '../context/UIContext';
 import { formatCurrency } from '../utils/formatters';
 
 interface ProductModalProps {
@@ -12,6 +13,7 @@ interface ProductModalProps {
 
 export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => {
   const { addToCart } = useCart();
+  const { restaurantInfo } = useUI();
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<{ [groupId: string]: ProductOption[] }>({});
@@ -241,14 +243,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
 
           <button
             onClick={handleAddToCart}
-            disabled={!isValid || isAdded}
-            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${isAdded
+            disabled={!isValid || isAdded || !restaurantInfo.isOpen}
+            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${!restaurantInfo.isOpen
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : isAdded
                 ? 'bg-green-500 text-white'
                 : isValid ? 'bg-primary text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
           >
             <AnimatePresence mode="wait">
-              {isAdded ? (
+              {!restaurantInfo.isOpen ? (
+                <motion.div key="closed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+                  <span>Restaurante Fechado</span>
+                </motion.div>
+              ) : isAdded ? (
                 <motion.div
                   key="check"
                   initial={{ scale: 0, rotate: -45 }}

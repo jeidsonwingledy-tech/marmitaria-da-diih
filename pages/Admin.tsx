@@ -415,8 +415,20 @@ const Admin = () => {
 
         {/* TAB: DASHBOARD */}
         {activeTab === 'dashboard' && (
-          <div className="text-center text-gray-500 mt-10">
-            <p>Selecione uma opção acima para gerenciar.</p>
+          <div className="space-y-4">
+            <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
+              <h2 className="font-bold text-gray-800 text-lg mb-4">Status do Restaurante</h2>
+              <button 
+                onClick={() => updateRestaurantInfo({ isOpen: !restaurantInfo.isOpen })}
+                className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${restaurantInfo.isOpen ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-red-500 text-white shadow-lg shadow-red-200'}`}
+              >
+                <Power size={24} />
+                {restaurantInfo.isOpen ? 'Restaurante Aberto (Pausar Pedidos)' : 'Restaurante Fechado (Abrir)'}
+              </button>
+              <p className="text-xs text-gray-500 mt-3">
+                {restaurantInfo.isOpen ? 'Os clientes podem ver o cardápio e fazer pedidos normalmente.' : 'Os clientes não poderão fazer pedidos. O cardápio ficará apenas para visualização.'}
+              </p>
+            </div>
           </div>
         )}
 

@@ -76,6 +76,7 @@ export interface RestaurantInfo {
   pixCity: string; // New
   
   businessHours: string;
+  isOpen: boolean; // New
   
   delivery: DeliveryConfig; // New
   style: StyleConfig; // New
