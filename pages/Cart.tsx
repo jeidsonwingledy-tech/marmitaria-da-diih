@@ -144,8 +144,33 @@ const Cart = () => {
 
     setIsSubmitting(true);
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // IMPORTANTE: O WhatsApp DEVE ser aberto de forma SÍNCRONA (antes de qualquer
+    // await), pois os browsers bloqueiam window.open() quando chamado após uma
+    // operação assíncrona (não é mais considerado gesto direto do usuário).
+    // ─────────────────────────────────────────────────────────────────────────
+    const tempOrderData: LastOrderData = {
+      id: 'novo',
+      total: finalTotal,
+      pixCode: pixCode,
+      paymentMethod: formData.paymentMethod,
+      items: [...cart],
+      customerName: formData.customerName,
+      address: currentAddress || '',
+      number: currentNumber || '',
+      neighborhood: currentNeighborhood || '',
+      deliveryFee: formData.deliveryFee,
+      notes: formData.notes,
+      needCutlery: formData.needCutlery,
+      changeFor: formData.changeFor
+    };
+
+    // Abre o WhatsApp imediatamente (dentro do gesto de clique do usuário)
+    const whatsAppUrl = buildWhatsAppUrl(tempOrderData);
+    window.open(whatsAppUrl, '_blank');
+
     try {
-      // Save profile to local storage (both addresses!)
+      // Salva perfil no localStorage (ambos os endereços)
       localStorage.setItem('diih_user_profile', JSON.stringify({
         customerName: formData.customerName,
         address: formData.address,
@@ -156,7 +181,7 @@ const Cart = () => {
         neighborhood2: formData.neighborhood2 || '',
       }));
 
-      // 1. Save to Firebase
+      // Salva o pedido no banco de dados
       const orderId = await addOrder({
         customerName: formData.customerName,
         items: cart,
@@ -171,29 +196,12 @@ const Cart = () => {
         deliveryFee: formData.deliveryFee
       });
 
-      const orderData = {
-        id: orderId,
-        total: finalTotal,
-        pixCode: pixCode,
-        paymentMethod: formData.paymentMethod,
-        items: [...cart],
-        customerName: formData.customerName,
-        address: currentAddress || '',
-        number: currentNumber || '',
-        neighborhood: currentNeighborhood || '',
-        deliveryFee: formData.deliveryFee,
-        notes: formData.notes,
-        needCutlery: formData.needCutlery,
-        changeFor: formData.changeFor
-      };
+      const orderData: LastOrderData = { ...tempOrderData, id: orderId };
 
       setLastOrderData(orderData);
       clearCart();
       setStep('success');
-      notify('Pedido realizado com sucesso!', 'success');
-
-      // Automaticamente abre o WhatsApp
-      openWhatsApp(orderData);
+      notify('Pedido realizado! WhatsApp aberto automaticamente.', 'success');
 
     } catch (error) {
       console.error("Erro ao finalizar pedido:", error);
@@ -204,26 +212,22 @@ const Cart = () => {
     }
   };
 
-  const openWhatsApp = (orderDataOverride?: LastOrderData) => {
-    const data = orderDataOverride || lastOrderData;
-    if (!data) return;
-
+  // Constrói a URL do WhatsApp (sem abrir a janela — usado tanto no envio automático
+  // quanto no botão de reenvio da tela de sucesso)
+  const buildWhatsAppUrl = (data: LastOrderData): string => {
     const itemsList = data.items.map((item: CartItem) => {
       const options = Object.values(item.selectedOptions).flat() as ProductOption[];
       let optionsText = '';
 
       if (options.length > 0) {
-        // Agrupa opções em pares para o formato solicitado
         for (let i = 0; i < options.length; i++) {
           const opt = options[i];
           const priceText = opt.price > 0 ? ` (${formatCurrency(opt.price)})` : '';
           if (i === 0) {
             optionsText += ` + ${opt.name}${priceText}`;
           } else if (i % 2 === 1) {
-            // Segundo item do par (mesma linha)
             optionsText += ` + ${opt.name}${priceText}`;
           } else {
-            // Início de novo par (nova linha)
             optionsText += ` \n+ ${opt.name}${priceText}`;
           }
         }
@@ -253,8 +257,14 @@ ${data.notes ? `*Observações:* ${data.notes} *` : ''}
 ${data.needCutlery ? `*Talheres:* ${data.needCutlery} *` : ''}
 _Pedido feito pelo site Marmitaria da Diih_`;
 
-    const url = `https://wa.me/${restaurantInfo.whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    return `https://wa.me/${restaurantInfo.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  };
+
+  // Abre o WhatsApp (usado no botão de reenvio na tela de sucesso)
+  const openWhatsApp = (orderDataOverride?: LastOrderData) => {
+    const data = orderDataOverride || lastOrderData;
+    if (!data) return;
+    window.open(buildWhatsAppUrl(data), '_blank');
   };
 
   const copyPix = () => {
@@ -272,12 +282,15 @@ _Pedido feito pelo site Marmitaria da Diih_`;
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600">
           <Check size={40} strokeWidth={4} />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Pedido Recebido!</h2>
-        <p className="text-gray-500 mb-6 max-w-xs mx-auto">
-          Seu pedido <strong>#{lastOrderData.id.slice(-4)}</strong> foi enviado para a cozinha.
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Pedido Enviado! 🎉</h2>
+        <p className="text-gray-500 mb-1 max-w-xs mx-auto">
+          Seu pedido <strong>#{lastOrderData.id.slice(-4)}</strong> foi confirmado.
+        </p>
+        <p className="text-green-600 font-semibold text-sm mb-6 max-w-xs mx-auto">
+          ✅ O WhatsApp foi aberto automaticamente com o pedido para a Marmitaria da Diih.
         </p>
 
-        {/* Show Pix Code again if payment method was Pix */}
+        {/* Código Pix se for o método de pagamento */}
         {lastOrderData.paymentMethod === 'Pix' && lastOrderData.pixCode && (
           <div className="mb-6 w-full max-w-xs bg-gray-50 p-4 rounded-xl border border-gray-200">
             <p className="text-sm font-bold text-gray-700 mb-2">Pagamento Pix</p>
@@ -295,10 +308,12 @@ _Pedido feito pelo site Marmitaria da Diih_`;
         )}
 
         <div className="space-y-3 w-full max-w-xs">
-          <button onClick={openWhatsApp} className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-colors flex items-center justify-center gap-2">
+          {/* Botão de reenvio caso o WhatsApp não tenha aberto */}
+          <button onClick={() => openWhatsApp()} className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-colors flex items-center justify-center gap-2">
             <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-5 h-5 filter brightness-0 invert" />
-            Avisar no WhatsApp
+            Reenviar pelo WhatsApp
           </button>
+          <p className="text-[10px] text-gray-400">Use este botão caso o WhatsApp não tenha aberto automaticamente.</p>
           <button onClick={() => navigate('/')} className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
             Voltar ao Início
           </button>
