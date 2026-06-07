@@ -110,7 +110,7 @@ const Admin = () => {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, start);
         gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.2, start + 0.05);
+        gain.gain.linearRampToValueAtTime(0.2, start + 0.03);
         gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -118,8 +118,9 @@ const Admin = () => {
         osc.stop(start + dur);
       };
       const now = ctx.currentTime;
-      playNote(587.33, now, 0.4); // D5
-      playNote(880.00, now + 0.15, 0.6); // A5
+      // iFood‑like two quick tones: 1000 Hz then 1500 Hz
+      playNote(1000, now, 0.15);
+      playNote(1500, now + 0.16, 0.15);
     } catch (err) {
       console.error("Audio error:", err);
     }
