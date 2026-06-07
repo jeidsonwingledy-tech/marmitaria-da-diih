@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Layout, Coffee, ArrowLeft, ImagePlus, X, Lock, Power, Edit3, Settings, PieChart, ListOrdered, Tags, Volume2, LogOut } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, Layout, Coffee, ArrowLeft, ImagePlus, X, Lock, Power, Edit3, Settings, PieChart, ListOrdered, Tags, Volume2, LogOut, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext';
 import { useAuth } from '../context/AuthContext';
@@ -52,6 +52,7 @@ const Admin = () => {
     orders,
     updateOrderStatus,
     clearOrders,
+    refreshOrders,
   } = useOrders();
 
   const syncToCloud = async () => {
@@ -96,6 +97,85 @@ const Admin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'menu' | 'categorias' | 'config'>('dashboard');
+
+  // Web Audio API notification alert
+  const playChime = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const playNote = (freq: number, start: number, dur: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.2, start + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + dur);
+      };
+      const now = ctx.currentTime;
+      playNote(587.33, now, 0.4); // D5
+      playNote(880.00, now + 0.15, 0.6); // A5
+    } catch (err) {
+      console.error("Audio error:", err);
+    }
+  };
+
+  const parseCustomerDetails = (fullName: string) => {
+    if (!fullName) return { name: '', phone: '' };
+    const parts = fullName.split(' - Tel: ');
+    return {
+      name: parts[0] || fullName,
+      phone: parts[1] || ''
+    };
+  };
+
+  const prevPendingIdsRef = useRef<string[]>([]);
+  const isInitialMount = useRef(true);
+
+  // Initialize the list of pending order IDs on mount
+  useEffect(() => {
+    if (orders.length > 0) {
+      prevPendingIdsRef.current = orders.filter(o => o.status === 'pending').map(o => o.id);
+    }
+  }, []);
+
+  // Polling to refresh orders every 10 seconds in admin mode
+  useEffect(() => {
+    if (!isAdminMode) return;
+
+    const interval = setInterval(() => {
+      refreshOrders();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [isAdminMode, refreshOrders]);
+
+  // Play sound when a new pending order arrives
+  useEffect(() => {
+    if (!isAdminMode) return;
+
+    // Skip playing chime on initial mount load to avoid annoying beep
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      prevPendingIdsRef.current = orders.filter(o => o.status === 'pending').map(o => o.id);
+      return;
+    }
+
+    const currentPending = orders.filter(o => o.status === 'pending');
+    const hasNewPending = currentPending.some(o => !prevPendingIdsRef.current.includes(o.id));
+
+    if (hasNewPending) {
+      playChime();
+      notify('Novo pedido recebido!', 'success');
+    }
+
+    prevPendingIdsRef.current = currentPending.map(o => o.id);
+  }, [orders, isAdminMode, notify]);
 
   // Menu Item Form State
   const [isAddingItem, setIsAddingItem] = useState(false);
@@ -444,8 +524,20 @@ const Admin = () => {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-bold text-gray-800 text-lg">#{order.id.slice(-4)}</h3>
-                      <p className="text-sm text-gray-500">{order.customerName}</p>
-                      <p className="text-xs text-gray-400">{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'Data inválida'}</p>
+                      {(() => {
+                        const { name, phone } = parseCustomerDetails(order.customerName);
+                        return (
+                          <div>
+                            <p className="text-sm font-bold text-gray-800">{name}</p>
+                            {phone && (
+                              <p className="text-xs text-green-600 font-semibold flex items-center gap-1 mt-0.5">
+                                <Phone size={10} className="fill-green-600" /> {phone}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                      <p className="text-xs text-gray-400 mt-1">{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'Data inválida'}</p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide 
                                 ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
@@ -523,16 +615,27 @@ const Admin = () => {
                     )}
 
                     {/* WhatsApp Contact Button */}
-                    <button
-                      onClick={() => {
-                        const msg = `Olá ${order.customerName}! Sou da Marmitaria da Diih sobre seu pedido *#${order.id.slice(-4)}*.`;
-                        window.open(`https://wa.me/${restaurantInfo.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
-                      }}
-                      className="col-span-2 mt-2 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
-                    >
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-5 h-5 filter brightness-0 invert" loading="lazy" />
-                      Contatar Cliente
-                    </button>
+                    {(() => {
+                      const { name, phone } = parseCustomerDetails(order.customerName);
+                      const cleanedPhone = phone.replace(/\D/g, '');
+                      const whatsappUrl = cleanedPhone 
+                        ? `https://wa.me/55${cleanedPhone}?text=${encodeURIComponent(`Olá ${name}! Sou da Marmitaria da Diih sobre seu pedido *#${order.id.slice(-4)}*.`)}`
+                        : `https://wa.me/${restaurantInfo.whatsappNumber}?text=${encodeURIComponent(`Olá ${name}! Sou da Marmitaria da Diih sobre seu pedido *#${order.id.slice(-4)}*.`)}`;
+                      
+                      return (
+                        <button
+                          onClick={() => window.open(whatsappUrl, '_blank')}
+                          className={`col-span-2 mt-2 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors ${
+                            cleanedPhone 
+                              ? 'bg-green-50 hover:bg-green-100 text-green-700 border border-green-200' 
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className={`w-5 h-5 ${!cleanedPhone && 'filter brightness-0 invert'}`} loading="lazy" />
+                          {cleanedPhone ? 'Chamar Cliente no WhatsApp' : 'Contatar Cliente (Sem Tel)'}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               ))

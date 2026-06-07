@@ -93,6 +93,7 @@ export interface RestaurantInfo {
 
 export interface OrderDetails {
   customerName: string;
+  customerPhone?: string;
   address: string;
   number: string;
   neighborhood: string; // New

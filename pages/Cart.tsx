@@ -35,8 +35,16 @@ const Cart = () => {
   const [lastOrderData, setLastOrderData] = useState<LastOrderData | null>(null);
   const [useSecondaryAddress, setUseSecondaryAddress] = useState(false);
 
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  };
+
   const [formData, setFormData] = useState<OrderDetails>({
     customerName: '',
+    customerPhone: '',
     address: '',
     number: '',
     neighborhood: '',
@@ -125,6 +133,11 @@ const Cart = () => {
     const currentNumber = useSecondaryAddress ? formData.number2 : formData.number;
 
     // Validações
+    if (!formData.customerPhone || formData.customerPhone.replace(/\D/g, '').length < 10) {
+      notify('Por favor, informe um WhatsApp/Telefone válido.', 'error');
+      return;
+    }
+
     if (!currentNeighborhood) {
       notify('Por favor, informe o bairro para entrega.', 'error');
       return;
@@ -173,6 +186,7 @@ const Cart = () => {
       // Salva perfil no localStorage (ambos os endereços)
       localStorage.setItem('diih_user_profile', JSON.stringify({
         customerName: formData.customerName,
+        customerPhone: formData.customerPhone || '',
         address: formData.address,
         number: formData.number,
         neighborhood: formData.neighborhood,
@@ -181,9 +195,9 @@ const Cart = () => {
         neighborhood2: formData.neighborhood2 || '',
       }));
 
-      // Salva o pedido no banco de dados
+      // Salva o pedido no banco de dados com o número de telefone no nome
       const orderId = await addOrder({
-        customerName: formData.customerName,
+        customerName: `${formData.customerName} - Tel: ${formData.customerPhone}`,
         items: cart,
         total: finalTotal,
         paymentMethod: formData.paymentMethod,
@@ -201,7 +215,7 @@ const Cart = () => {
       setLastOrderData(orderData);
       clearCart();
       setStep('success');
-      notify('Pedido realizado! WhatsApp aberto automaticamente.', 'success');
+      notify('Pedido realizado com sucesso!', 'success');
 
     } catch (error) {
       console.error("Erro ao finalizar pedido:", error);
@@ -282,13 +296,22 @@ _Pedido feito pelo site Marmitaria da Diih_`;
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600">
           <Check size={40} strokeWidth={4} />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Pedido Enviado! 🎉</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Pedido Recebido na Cozinha! 🍳🎉</h2>
         <p className="text-gray-500 mb-1 max-w-xs mx-auto">
-          Seu pedido <strong>#{lastOrderData.id.slice(-4)}</strong> foi confirmado.
+          Seu pedido <strong>#{lastOrderData.id.slice(-4)}</strong> já foi registrado no nosso sistema.
         </p>
-        <p className="text-green-600 font-semibold text-sm mb-6 max-w-xs mx-auto">
-          ✅ O WhatsApp foi aberto automaticamente com o pedido para a Marmitaria da Diih.
+        <p className="text-green-600 font-semibold text-sm mb-4 max-w-xs mx-auto">
+          ✅ O WhatsApp foi aberto para você conversar com a Marmitaria da Diih.
         </p>
+
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-xl mb-6 text-xs text-left max-w-xs mx-auto space-y-1.5 shadow-sm">
+          <p className="font-bold flex items-center gap-1 text-amber-800">
+            ⚠️ ATENÇÃO:
+          </p>
+          <p>
+            Caso a janela do WhatsApp tenha aberto, lembre-se de <strong>clicar no botão de ENVIAR</strong> na conversa para nos mandar o resumo do pedido e iniciar o chat conosco.
+          </p>
+        </div>
 
         {/* Código Pix se for o método de pagamento */}
         {lastOrderData.paymentMethod === 'Pix' && lastOrderData.pixCode && (
@@ -343,6 +366,18 @@ _Pedido feito pelo site Marmitaria da Diih_`;
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Seu Nome</label>
             <input required type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white" placeholder="Ex: João Silva" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp / Telefone <span className="text-red-500">*</span></label>
+            <input 
+              required 
+              type="tel" 
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white" 
+              placeholder="Ex: (19) 99999-9999" 
+              value={formData.customerPhone || ''} 
+              onChange={e => setFormData({ ...formData, customerPhone: formatPhone(e.target.value) })} 
+            />
           </div>
 
           <div className="bg-gray-50 p-1.5 rounded-xl mb-4 border border-gray-200 flex gap-1">
