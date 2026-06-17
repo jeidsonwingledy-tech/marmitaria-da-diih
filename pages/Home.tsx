@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Star, Clock, ChevronRight, Search } from 'lucide-react';
 import { useUI } from '../context/UIContext';
@@ -95,27 +95,55 @@ const Home = () => {
 
       {/* iFood-style Circular Categories */}
       <div className="mt-8">
-        <h2 className="px-4 text-sm font-bold text-gray-800 uppercase tracking-tight mb-4">Categorias</h2>
+        <div className="px-4 mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-tight">Categorias</h2>
+          <span className="text-[11px] text-primary font-semibold flex items-center gap-1 animate-bounce">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v6"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+            Toque para ver os itens!
+          </span>
+        </div>
         <div className="flex overflow-x-auto no-scrollbar px-4 gap-6 pb-4">
-          {displayedCategories.map((cat) => (
-            <button 
-              key={cat.id}
-              onClick={() => setSelectedCategoryId(cat.id === selectedCategoryId ? null : cat.id)}
-              className="flex flex-col items-center gap-2 min-w-[70px] transition-transform active:scale-95"
-            >
-              <div className={`w-16 h-16 rounded-full overflow-hidden border-2 transition-colors ${selectedCategoryId === cat.id ? 'border-primary' : 'border-gray-100'}`}>
-                <img 
-                  src={cat.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'} 
-                  alt={cat.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <span className={`text-[11px] text-center font-medium ${selectedCategoryId === cat.id ? 'text-primary' : 'text-gray-600'}`}>
-                {cat.name}
-              </span>
-            </button>
-          ))}
+          {displayedCategories.map((cat, idx) => {
+            const isSelected = selectedCategoryId === cat.id;
+            return (
+              <button 
+                key={cat.id}
+                onClick={() => setSelectedCategoryId(isSelected ? null : cat.id)}
+                className="flex flex-col items-center gap-2 min-w-[70px] transition-transform active:scale-90 focus:outline-none group"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <div className="relative">
+                  {/* Pulsing ring to attract attention on first load */}
+                  {!selectedCategoryId && idx === 0 && (
+                    <span className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-60" />
+                  )}
+                  <div className={`w-16 h-16 rounded-full overflow-hidden border-[3px] transition-all duration-200 shadow-md ${
+                    isSelected
+                      ? 'border-primary scale-110 shadow-primary/30'
+                      : 'border-gray-200 group-hover:border-primary/60 group-hover:scale-105'
+                  }`}>
+                    <img 
+                      src={cat.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'} 
+                      alt={cat.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  {/* Selected checkmark badge */}
+                  {isSelected && (
+                    <span className="absolute -bottom-1 -right-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <span className={`text-[11px] text-center font-semibold leading-tight ${
+                  isSelected ? 'text-primary' : 'text-gray-600 group-hover:text-primary'
+                }`}>
+                  {cat.name}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
