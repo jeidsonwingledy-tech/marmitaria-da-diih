@@ -25,8 +25,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const loginAdmin = useCallback((password: string): boolean => {
-    const currentPass = restaurantInfo.adminPassword || 'admin';
-    if (password === currentPass || password === 'admin_master_bypass') {
+    const currentPass = (restaurantInfo.adminPassword || 'admin').trim();
+    const inputPass = password.trim();
+    if (inputPass === currentPass || inputPass === 'admin_master_bypass') {
       localStorage.setItem(ADMIN_KEY, 'true');
       setIsAdminMode(true);
       return true;

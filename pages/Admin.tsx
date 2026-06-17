@@ -36,10 +36,12 @@ const PasswordForm: React.FC<{
   const { notify } = useUI();
 
   const handleSave = async () => {
-    if (!newPass) return notify('Digite a nova senha.', 'error');
-    if (newPass !== confirmPass) return notify('As senhas não coincidem.', 'error');
-    if (newPass.length < 4) return notify('A senha deve ter pelo menos 4 caracteres.', 'error');
-    await onSavePassword(newPass);
+    const p1 = newPass.trim();
+    const p2 = confirmPass.trim();
+    if (!p1) return notify('Digite a nova senha.', 'error');
+    if (p1 !== p2) return notify('As senhas não coincidem.', 'error');
+    if (p1.length < 4) return notify('A senha deve ter pelo menos 4 caracteres.', 'error');
+    await onSavePassword(p1);
     setNewPass('');
     setConfirmPass('');
   };
