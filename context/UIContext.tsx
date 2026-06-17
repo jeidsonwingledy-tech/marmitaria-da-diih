@@ -66,7 +66,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     try {
       const { data, error } = await supabase
         .from('settings')
-        .select('id, name, phone, whatsappNumber, address, logo, banner, instagramUrl, facebookUrl, pixKey, pixKeyType, pixName, pixCity, businessHours, delivery, style, notice, adminUsername')
+        .select('id, name, phone, whatsappNumber, address, logo, banner, instagramUrl, facebookUrl, pixKey, pixKeyType, pixName, pixCity, businessHours, delivery, style, notice, adminUsername, adminPassword')
         .eq('id', 'info')
         .single();
       if (data && !error) {
@@ -113,7 +113,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     
     if (supabase) {
       try {
-        const { error } = await supabase.from('settings').update(updates).eq('id', 'info');
+        const { error } = await supabase.from('settings').upsert({ id: 'info', ...next });
         if (error) {
           notify('Erro ao salvar info: ' + error.message, 'error');
         } else {
