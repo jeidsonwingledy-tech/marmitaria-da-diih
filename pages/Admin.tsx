@@ -672,10 +672,23 @@ const Admin = () => {
 
             <div className="space-y-3">
               {categorias.map(cat => (
-                <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-white">
-                  <span className="font-medium text-gray-700">{cat.name}</span>
+                <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-white gap-3">
+                  {/* Category Image — click to change */}
+                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 shrink-0 relative">
+                    <ImageEditable
+                      src={cat.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'}
+                      alt={cat.name}
+                      onUpdate={(newImg) => updateCategory(cat.id, { image: newImg })}
+                      overlayText="Trocar"
+                      className="w-full h-full rounded-full"
+                      editable={true}
+                    />
+                  </div>
+
+                  <span className="font-medium text-gray-700 flex-1">{cat.name}</span>
+
                   <div className="flex items-center gap-3">
-                    {/* Enhanced Toggle Button */}
+                    {/* Toggle ON/OFF */}
                     <button onClick={() => updateCategory(cat.id, { active: !cat.active })} className={`w-12 h-8 rounded-full p-1 transition-colors flex items-center shadow-inner cursor-pointer relative ${cat.active ? 'bg-green-500 justify-end' : 'bg-gray-300 justify-start'}`}>
                       <div className="w-6 h-6 rounded-full bg-white shadow-sm absolute pointer-events-none transition-all duration-300" style={{ left: cat.active ? 'calc(100% - 28px)' : '4px' }} />
                     </button>
