@@ -23,6 +23,73 @@ const NavItem = ({ id, icon: Icon, label, activeTab, setActiveTab }: { id: strin
   </button>
 );
 
+// ---- Sub-component: password form (must be a real component to use hooks) ----
+const PasswordForm: React.FC<{
+  currentPassword?: string;
+  adminUsername?: string;
+  onSavePassword: (pass: string) => Promise<void>;
+  onSaveUsername: (user: string) => void;
+}> = ({ currentPassword, adminUsername, onSavePassword, onSaveUsername }) => {
+  const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const { notify } = useUI();
+
+  const handleSave = async () => {
+    if (!newPass) return notify('Digite a nova senha.', 'error');
+    if (newPass !== confirmPass) return notify('As senhas não coincidem.', 'error');
+    if (newPass.length < 4) return notify('A senha deve ter pelo menos 4 caracteres.', 'error');
+    await onSavePassword(newPass);
+    setNewPass('');
+    setConfirmPass('');
+  };
+
+  return (
+    <div className="bg-red-50 p-5 rounded-2xl border border-red-100">
+      <h3 className="font-bold text-red-800 mb-2 flex items-center gap-2"><Lock size={16} /> Credenciais de Acesso (Admin)</h3>
+      <div className="space-y-3 mt-3">
+        <div>
+          <label className="text-xs font-bold text-red-700 uppercase">Usuário</label>
+          <input type="text" value={adminUsername || 'admin'} onChange={e => onSaveUsername(e.target.value)} className="w-full p-3 bg-white border border-red-200 rounded-xl mt-1" />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-red-700 uppercase">Nova Senha</label>
+          <div className="relative mt-1">
+            <input
+              type={showPass ? 'text' : 'password'}
+              value={newPass}
+              onChange={e => setNewPass(e.target.value)}
+              placeholder="Digite a nova senha..."
+              className="w-full p-3 pr-10 bg-white border border-red-200 rounded-xl"
+            />
+            <button type="button" onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+              {showPass ? '🙈' : '👁️'}
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-bold text-red-700 uppercase">Confirmar Nova Senha</label>
+          <input
+            type={showPass ? 'text' : 'password'}
+            value={confirmPass}
+            onChange={e => setConfirmPass(e.target.value)}
+            placeholder="Repita a nova senha..."
+            className="w-full p-3 bg-white border border-red-200 rounded-xl mt-1"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleSave}
+          className="w-full bg-red-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-1"
+        >
+          <Lock size={15} /> Salvar Nova Senha
+        </button>
+      </div>
+      <p className="text-[10px] text-red-400 mt-3">Senha atual: <span className="font-bold">{currentPassword ? '••••••' : 'admin (padrão)'}</span></p>
+    </div>
+  );
+};
+
 const Admin = () => {
   const {
     restaurantInfo,
@@ -1021,65 +1088,12 @@ with check ( bucket_id = 'images' );`}
             </div>
 
             {/* Password */}
-            {(() => {
-              const [newPass, setNewPass] = React.useState('');
-              const [confirmPass, setConfirmPass] = React.useState('');
-              const [showPass, setShowPass] = React.useState(false);
-
-              const handleSavePassword = async () => {
-                if (!newPass) return notify('Digite a nova senha.', 'error');
-                if (newPass !== confirmPass) return notify('As senhas não coincidem.', 'error');
-                if (newPass.length < 4) return notify('A senha deve ter pelo menos 4 caracteres.', 'error');
-                await updateRestaurantInfo({ adminPassword: newPass });
-                setNewPass('');
-                setConfirmPass('');
-              };
-
-              return (
-                <div className="bg-red-50 p-5 rounded-2xl border border-red-100">
-                  <h3 className="font-bold text-red-800 mb-2 flex items-center gap-2"><Lock size={16} /> Credenciais de Acesso (Admin)</h3>
-                  <div className="space-y-3 mt-3">
-                    <div>
-                      <label className="text-xs font-bold text-red-700 uppercase">Usuário</label>
-                      <input type="text" value={restaurantInfo.adminUsername || 'admin'} onChange={e => updateRestaurantInfo({ adminUsername: e.target.value })} className="w-full p-3 bg-white border border-red-200 rounded-xl mt-1" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-red-700 uppercase">Nova Senha</label>
-                      <div className="relative mt-1">
-                        <input
-                          type={showPass ? 'text' : 'password'}
-                          value={newPass}
-                          onChange={e => setNewPass(e.target.value)}
-                          placeholder="Digite a nova senha..."
-                          className="w-full p-3 pr-10 bg-white border border-red-200 rounded-xl"
-                        />
-                        <button type="button" onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                          {showPass ? '🙈' : '👁️'}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-red-700 uppercase">Confirmar Nova Senha</label>
-                      <input
-                        type={showPass ? 'text' : 'password'}
-                        value={confirmPass}
-                        onChange={e => setConfirmPass(e.target.value)}
-                        placeholder="Repita a nova senha..."
-                        className="w-full p-3 bg-white border border-red-200 rounded-xl mt-1"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSavePassword}
-                      className="w-full bg-red-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-1"
-                    >
-                      <Lock size={15} /> Salvar Nova Senha
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-red-400 mt-3">Senha atual: <span className="font-bold">{restaurantInfo.adminPassword ? '••••••' : 'admin (padrão)'}</span></p>
-                </div>
-              );
-            })()}
+            <PasswordForm
+              currentPassword={restaurantInfo.adminPassword}
+              adminUsername={restaurantInfo.adminUsername}
+              onSavePassword={(pass) => updateRestaurantInfo({ adminPassword: pass })}
+              onSaveUsername={(user) => updateRestaurantInfo({ adminUsername: user })}
+            />
 
             {/* Horário de Funcionamento Control */}
             <div className="bg-white p-5 rounded-2xl shadow-sm border border-orange-100">
