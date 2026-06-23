@@ -173,11 +173,10 @@ const Home = () => {
               return (
                 <div key={cat.id} className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-gray-800">{cat.name}</h3>
-                    <Link to="/cardapio" className="text-primary text-xs font-bold">Ver tudo</Link>
+                    <h3 className="text-lg font-bold text-gray-800">{cat.name}</h3>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
-                    {items.slice(0, selectedCategoryId ? 50 : 3).map((item) => (
+                    {items.map((item) => (
                       <ProductCard key={item.id} item={item} />
                     ))}
                   </div>
