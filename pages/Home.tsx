@@ -113,14 +113,16 @@ const Home = () => {
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <div className="relative">
-                  {/* Pulsing ring to attract attention on first load */}
-                  {!selectedCategoryId && idx === 0 && (
+                  {/* Pulsing ring to attract attention */}
+                  {(!selectedCategoryId && idx === 0) || cat.id === 'pratododia' ? (
                     <span className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-60" />
-                  )}
+                  ) : null}
                   <div className={`w-16 h-16 rounded-full overflow-hidden border-[3px] transition-all duration-200 shadow-md ${
                     isSelected
                       ? 'border-primary scale-110 shadow-primary/30'
-                      : 'border-gray-200 group-hover:border-primary/60 group-hover:scale-105'
+                      : cat.id === 'pratododia'
+                        ? 'border-yellow-400 group-hover:border-yellow-500 group-hover:scale-105 shadow-yellow-100'
+                        : 'border-gray-200 group-hover:border-primary/60 group-hover:scale-105'
                   }`}>
                     <img 
                       src={cat.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'} 
@@ -136,9 +138,12 @@ const Home = () => {
                     </span>
                   )}
                 </div>
-                <span className={`text-[11px] text-center font-semibold leading-tight ${
+                <span className={`text-[11px] text-center font-semibold leading-tight flex flex-col items-center gap-0.5 mt-1 ${
                   isSelected ? 'text-primary' : 'text-gray-600 group-hover:text-primary'
                 }`}>
+                  {cat.id === 'pratododia' && (
+                    <span className="bg-yellow-400 text-yellow-900 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full">Destaque</span>
+                  )}
                   {cat.name}
                 </span>
               </button>
@@ -173,7 +178,14 @@ const Home = () => {
               return (
                 <div key={cat.id} className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-gray-800">{cat.name}</h3>
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      {cat.name}
+                      {cat.id === 'pratododia' && (
+                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-md font-bold flex items-center gap-1 border border-yellow-200">
+                          ⭐ Destaque
+                        </span>
+                      )}
+                    </h3>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     {items.map((item) => (
