@@ -56,23 +56,65 @@ export const INITIAL_MENU: MenuItem[] = [
     id: 'monte-1',
     categoryId: 'montemarmita',
     name: 'Monte sua Marmita',
-    description: 'Arroz, feijão e escolha até 2 misturas da nossa seleção do dia. Acompanha salada e farofa da casa.',
+    description: 'Arroz, feijão e 1 mistura (tamanho P) ou 2 misturas (tamanho M). Acompanha salada e farofa da casa.',
     price: 18.90,
     images: ['https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'],
     available: true,
     optionGroups: [
       {
-        id: 'proteinas',
-        title: 'Escolha as Proteínas',
+        id: 'tamanho',
+        title: 'Tamanho',
         required: true,
         min: 1,
-        max: 2,
+        max: 1,
+        options: [
+          { id: 'p', name: 'Pequena — 1 mistura', price: 0, available: true },
+          { id: 'm', name: 'Média — 2 misturas (+R$ 3,00)', price: 3.00, available: true },
+        ]
+      },
+      {
+        id: 'mistura1',
+        title: '1ª Mistura',
+        required: true,
+        min: 1,
+        max: 1,
+        // Só aparece quando o cliente escolher qualquer tamanho (P ou M)
+        // Para P: só esta mistura é mostrada
         options: [
           { id: 'frango', name: 'Frango Grelhado', price: 0, available: true },
           { id: 'carne', name: 'Carne Moída', price: 0, available: true },
           { id: 'bife', name: 'Bife Acebolado', price: 2.00, available: true },
           { id: 'peixe', name: 'Peixe Grelhado', price: 3.00, available: true },
           { id: 'linguica', name: 'Linguiça Toscana', price: 0, available: true },
+        ]
+      },
+      {
+        id: 'mistura2',
+        title: '2ª Mistura (bônus do tamanho M)',
+        required: true,
+        min: 1,
+        max: 1,
+        showOnlyWhenGroupId: 'tamanho',
+        showOnlyWhenOptionId: 'm',
+        maxExtraCost: 3.00,
+        options: [
+          { id: 'frango2', name: 'Frango Grelhado', price: 0, available: true },
+          { id: 'carne2', name: 'Carne Moída', price: 0, available: true },
+          { id: 'bife2', name: 'Bife Acebolado', price: 2.00, available: true },
+          { id: 'peixe2', name: 'Peixe Grelhado', price: 3.00, available: true },
+          { id: 'linguica2', name: 'Linguiça Toscana', price: 0, available: true },
+        ]
+      },
+      {
+        id: 'acompanhamentos',
+        title: 'Acompanhamentos Extras',
+        required: false,
+        min: 0,
+        max: 3,
+        options: [
+          { id: 'batata', name: 'Batata Frita', price: 5.00, available: true },
+          { id: 'polenta', name: 'Polenta Frita', price: 5.00, available: true },
+          { id: 'mandioca', name: 'Mandioca Frita', price: 6.00, available: true },
         ]
       }
     ]

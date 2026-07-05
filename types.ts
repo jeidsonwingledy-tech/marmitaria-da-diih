@@ -11,7 +11,12 @@ export interface ProductOptionGroup {
   title: string;
   required: boolean;
   min: number; 
-  max: number; 
+  max: number;
+  // Optional: max total extra cost allowed across selected options (to prevent selecting 2 expensive items)
+  maxExtraCost?: number;
+  // Optional: this group is only shown when the specified group has a specific option selected
+  showOnlyWhenGroupId?: string;
+  showOnlyWhenOptionId?: string;
   options: ProductOption[];
 }
 

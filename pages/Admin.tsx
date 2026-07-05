@@ -11,6 +11,7 @@ import { supabase } from '../services/supabase';
 import { INITIAL_MENU, INITIAL_RESTAURANT_INFO, INITIAL_CATEGORIAS } from '../constants';
 import { MenuItem, ProductOptionGroup, ProductOption } from '../types';
 import { formatCurrency, generateId } from '../utils/formatters';
+import MonteGerenciamento from '../components/admin/MonteGerenciamento';
 
 // --- NAVIGATION TABS COMPONENT ---
 const NavItem = ({ id, icon: Icon, label, activeTab, setActiveTab }: { id: string, icon: React.ElementType, label: string, activeTab: string, setActiveTab: (id: string) => void }) => (
@@ -165,7 +166,7 @@ const Admin = () => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'menu' | 'categorias' | 'config'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'menu' | 'monte' | 'categorias' | 'config'>('dashboard');
 
   // Web Audio API notification alert
   const playChime = () => {
@@ -540,8 +541,9 @@ const Admin = () => {
       <div className="mx-4 -mt-12 bg-gray-50 rounded-2xl shadow-lg p-2 flex justify-between gap-1 border border-gray-200 relative z-10">
         <NavItem id="dashboard" icon={PieChart} label="Visão" activeTab={activeTab} setActiveTab={setActiveTab} />
         <NavItem id="orders" icon={ListOrdered} label="Pedidos" activeTab={activeTab} setActiveTab={setActiveTab} />
-        <NavItem id="menu" icon={Coffee} label="Cardápio" activeTab={activeTab} setActiveTab={setActiveTab} />
-        <NavItem id="categorias" icon={Tags} label="Categorias" activeTab={activeTab} setActiveTab={setActiveTab} />
+        <NavItem id="monte" icon={Coffee} label="🍱 Monte" activeTab={activeTab} setActiveTab={setActiveTab} />
+        <NavItem id="menu" icon={Layout} label="Cardápio" activeTab={activeTab} setActiveTab={setActiveTab} />
+        <NavItem id="categorias" icon={Tags} label="Categ." activeTab={activeTab} setActiveTab={setActiveTab} />
         <NavItem id="config" icon={Settings} label="Config" activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
 
@@ -768,6 +770,11 @@ const Admin = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* TAB: MONTE SUA MARMITA */}
+        {activeTab === 'monte' && (
+          <MonteGerenciamento />
         )}
 
         {/* TAB: MENU */}
