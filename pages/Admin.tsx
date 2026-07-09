@@ -888,10 +888,18 @@ const Admin = () => {
 
                         <div className="space-y-1">
                           {g.options.map(o => (
-                            <div key={o.id} className="flex gap-2 items-center text-xs">
-                              <input value={o.name || ''} onChange={e => updateOption(g.id, o.id, 'name', e.target.value)} className="flex-1 bg-white border border-gray-200 p-1.5 rounded outline-none focus:border-gray-400" placeholder="Nome da Opção" />
-                              <input type="number" value={o.price !== undefined && !Number.isNaN(o.price) ? o.price : ''} onChange={e => updateOption(g.id, o.id, 'price', parseFloat(e.target.value))} className="w-16 bg-white border border-gray-200 p-1.5 rounded outline-none focus:border-gray-400" placeholder="R$ 0.00" />
-                              <button type="button" onClick={() => removeOption(g.id, o.id)} className="text-gray-400 hover:text-red-500"><X size={14} /></button>
+                            <div key={o.id} className={`flex gap-2 items-center text-xs p-1.5 rounded border transition-all ${o.available !== false ? 'bg-white border-transparent' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                              <input value={o.name || ''} onChange={e => updateOption(g.id, o.id, 'name', e.target.value)} className="flex-1 bg-transparent border-b border-dashed border-gray-300 p-1 outline-none focus:border-gray-400 font-medium" placeholder="Nome da Opção" />
+                              <input type="number" value={o.price !== undefined && !Number.isNaN(o.price) ? o.price : ''} onChange={e => updateOption(g.id, o.id, 'price', parseFloat(e.target.value))} className="w-16 bg-transparent border-b border-dashed border-gray-300 p-1 outline-none focus:border-gray-400 text-right" placeholder="R$ 0.00" />
+                              <button 
+                                type="button" 
+                                onClick={() => updateOption(g.id, o.id, 'available', o.available === false ? true : false)} 
+                                title={o.available !== false ? 'Desativar' : 'Ativar'}
+                                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${o.available !== false ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500'}`}
+                              >
+                                <Power size={12} />
+                              </button>
+                              <button type="button" onClick={() => removeOption(g.id, o.id)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 bg-red-50 rounded-full"><X size={12} /></button>
                             </div>
                           ))}
                           <button type="button" onClick={() => addOption(g.id)} className="text-xs text-primary font-bold mt-2 flex items-center gap-1 hover:underline"><Plus size={10} /> Adicionar Opção</button>
