@@ -39,6 +39,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
     return currentExtraCost + (option.price || 0) > group.maxExtraCost;
   };
 
+  // ─── Intelligent Tier Guard (Limit Non-Economic) ───────────────────────────
+  const wouldExceedLimitNonEconomic = (group: ProductOptionGroup, option: ProductOption): boolean => {
+    if (!group.limitNonEconomic) return false;
+    // se estou desmarcando, ou adicionando uma econômica, tudo bem
+    if (option.tier === 'economica' || !option.tier) return false;
+
+    const current = selectedOptions[group.id] || [];
+    const nonEconomicCount = current.filter(o => o.tier === 'intermediaria' || o.tier === 'premium').length;
+
+    // Se já tiver 1 não econômica, e estou tentando adicionar outra não econômica, bloqueia.
+    // Detalhe: se eu estiver apenas aumentando a quantidade da MESMA carne que já está lá (caso seja checkbox multiplo)
+    // Então vamos apenas contar quantas unicas, ou se a regra é estrita: max 1 unidade não economica.
+    // Pela regra de negócio, max 1 UNIDADE de proteína não econômica.
+    return nonEconomicCount >= 1;
+  };
+
   const handleOptionToggle = (groupId: string, option: ProductOption, max: number, isRadio: boolean, group: ProductOptionGroup) => {
     setSelectedOptions(prev => {
       const current = prev[groupId] || [];
@@ -64,6 +80,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
         } else {
           if (current.length >= max) return prev;
           if (wouldExceedMaxExtraCost(group, option)) return prev;
+          if (wouldExceedLimitNonEconomic(group, option)) {
+            alert("Esta combinação de proteínas não está disponível. Escolha outra opção.");
+            return prev;
+          }
           return { ...prev, [groupId]: [...current, option] };
         }
       }
@@ -79,6 +99,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ item, onClose }) => 
       if (delta > 0) {
         if (totalInGroup >= maxGroup) return prev;
         if (wouldExceedMaxExtraCost(group, option)) return prev;
+        if (wouldExceedLimitNonEconomic(group, option)) {
+          alert("Esta combinação de proteínas não está disponível. Escolha outra opção.");
+          return prev;
+        }
         return { ...prev, [groupId]: [...current, option] };
       } else {
         if (currentCount > 0) {

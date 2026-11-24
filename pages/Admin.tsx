@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Layout, Coffee, ArrowLeft, ImagePlus, X, Lock, Power, Edit3, Settings, PieChart, ListOrdered, Tags, Volume2, LogOut, Phone } from 'lucide-react';
+import { Plus, Trash2, Layout, Coffee, ArrowLeft, ImagePlus, X, Lock, Power, Edit3, Settings, PieChart, ListOrdered, Tags, Volume2, LogOut, Phone, MapPin, Utensils, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext';
 import { useAuth } from '../context/AuthContext';
@@ -203,6 +203,67 @@ const Admin = () => {
       name: parts[0] || fullName,
       phone: parts[1] || ''
     };
+  };
+
+  // Helper para extrair todos os adicionais e opções selecionadas de forma segura e normalizada
+  const getSelectedOptionsList = (selectedOptions: any): { id: string; name: string; price: number; groupTitle?: string }[] => {
+    if (!selectedOptions) return [];
+    const list: { id: string; name: string; price: number; groupTitle?: string }[] = [];
+
+    if (Array.isArray(selectedOptions)) {
+      selectedOptions.forEach(opt => {
+        if (opt && typeof opt === 'object' && opt.name) {
+          list.push({ id: opt.id || opt.name, name: opt.name, price: Number(opt.price) || 0 });
+        }
+      });
+      return list;
+    }
+
+    if (typeof selectedOptions === 'object') {
+      Object.entries(selectedOptions).forEach(([groupId, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((opt: any) => {
+            if (opt && typeof opt === 'object' && opt.name) {
+              list.push({ id: opt.id || opt.name, name: opt.name, price: Number(opt.price) || 0, groupTitle: groupId });
+            }
+          });
+        } else if (value && typeof value === 'object' && (value as any).name) {
+          const opt = value as any;
+          list.push({ id: opt.id || opt.name, name: opt.name, price: Number(opt.price) || 0, groupTitle: groupId });
+        }
+      });
+    }
+
+    return list;
+  };
+
+  // Helper para calcular o valor real do item com suas opções/tamanhos
+  const calcItemTotal = (item: any) => {
+    let hasSizeSelected = false;
+    let optionsTotal = 0;
+
+    let parsedGroups: any[] = [];
+    if (typeof item.optionGroups === 'string') {
+      try { parsedGroups = JSON.parse(item.optionGroups); } catch {}
+    } else if (Array.isArray(item.optionGroups)) {
+      parsedGroups = item.optionGroups;
+    }
+
+    const optionsList = getSelectedOptionsList(item.selectedOptions);
+
+    optionsList.forEach(opt => {
+      if (opt.groupTitle) {
+        const group = parsedGroups.find(g => String(g.id) === String(opt.groupTitle));
+        const isSize = group && Number(group.max) === 1 && (group.required === true || String(group.required) === 'true');
+        if (isSize) {
+          hasSizeSelected = true;
+        }
+      }
+      optionsTotal += opt.price;
+    });
+
+    const basePrice = hasSizeSelected ? 0 : (Number(item.price) || 0);
+    return (basePrice + optionsTotal) * (Number(item.quantity) || 1);
   };
 
   const prevPendingIdsRef = useRef<string[]>([]);
@@ -626,44 +687,117 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  <div className="border-t border-b border-gray-50 py-3 my-3 space-y-2">
+                  {/* LISTA DE ITENS COM ACRÉSCIMOS E DETALHES */}
+                  <div className="border-t border-b border-gray-100 py-3 my-3 space-y-2.5">
                     {order.items.map((item, idx) => {
-                      let itemTotal = item.price;
-                      if (item.selectedOptions) {
-                        Object.values(item.selectedOptions).forEach(groupOptions => {
-                          groupOptions.forEach(opt => { itemTotal += opt.price || 0; });
-                        });
-                      }
+                      const itemTotal = calcItemTotal(item);
+                      const optionsList = getSelectedOptionsList(item.selectedOptions);
+
                       return (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span className="text-gray-600"><span className="font-bold text-gray-800">{item.quantity}x</span> {item.name}</span>
-                          <span className="text-gray-500">{formatCurrency(itemTotal * item.quantity)}</span>
+                        <div key={idx} className="bg-gray-50/80 p-3 rounded-xl border border-gray-100/80">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 pr-2">
+                              <span className="font-bold text-gray-800 text-sm leading-snug">
+                                <span className="text-primary font-black mr-1">{item.quantity}x</span> {item.name}
+                              </span>
+
+                              {/* Acréscimos, adicionais e opções selecionadas */}
+                              {optionsList.length > 0 && (
+                                <div className="mt-1.5 space-y-1 pl-2 border-l-2 border-primary/40">
+                                  {optionsList.map((opt, optIdx) => (
+                                    <div key={optIdx} className="flex items-center justify-between text-xs text-gray-600">
+                                      <span className="flex items-center gap-1">
+                                        <span className="text-primary font-bold text-[10px]">+</span>
+                                        <span>{opt.name}</span>
+                                      </span>
+                                      {opt.price > 0 ? (
+                                        <span className="text-gray-500 font-semibold ml-2">+{formatCurrency(opt.price)}</span>
+                                      ) : (
+                                        <span className="text-gray-400 text-[10px] italic ml-2">Incluso</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-sm font-bold text-gray-800 whitespace-nowrap">
+                              {formatCurrency(itemTotal)}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
-                    {order.deliveryFee > 0 && (
-                      <div className="flex justify-between text-sm text-gray-500 pt-1">
-                        <span>Taxa de Entrega</span>
-                        <span>{formatCurrency(order.deliveryFee)}</span>
-                      </div>
-                    )}
+
+                    {/* RESUMO FINANCEIRO (SUBTOTAL, TAXA DE ENTREGA, TOTAL) */}
+                    <div className="pt-2 space-y-1.5">
+                      {(() => {
+                        const itemsSubtotal = order.items.reduce((acc, it) => acc + calcItemTotal(it), 0);
+                        const fee = Number(order.deliveryFee) || 0;
+                        return (
+                          <>
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>Subtotal ({order.items.reduce((s, it) => s + (it.quantity || 1), 0)} itens)</span>
+                              <span>{formatCurrency(itemsSubtotal)}</span>
+                            </div>
+
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-gray-600 flex items-center gap-1 font-medium">
+                                🛵 Taxa de Entrega
+                              </span>
+                              {fee > 0 ? (
+                                <span className="font-bold text-gray-800">{formatCurrency(fee)}</span>
+                              ) : (
+                                <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                  Grátis
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
 
-                  <div className="flex justify-between items-center mb-4">
+                  {/* TOTAL E FORMA DE PAGAMENTO */}
+                  <div className="flex justify-between items-center mb-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                     <div>
-                      <p className="text-xs text-gray-400 uppercase font-bold">Total</p>
-                      <p className="text-xl font-bold text-gray-800">{formatCurrency(order.total)}</p>
+                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-wider">Total a Receber</p>
+                      <p className="text-xl font-black text-gray-900 leading-tight">{formatCurrency(order.total)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400 uppercase font-bold">Pagamento</p>
-                      <p className="text-sm font-medium text-gray-700">{order.paymentMethod} {order.changeFor && `(Troco p/ ${order.changeFor})`}</p>
+                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-wider">Forma de Pagamento</p>
+                      <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-800 text-xs font-bold mt-0.5 shadow-2xs">
+                        <span>{order.paymentMethod === 'Pix' ? '⚡ Pix' : order.paymentMethod === 'Cartão' ? '💳 Cartão' : '💵 Dinheiro'}</span>
+                      </div>
+                      {order.changeFor && (
+                        <p className="text-[11px] text-orange-600 font-semibold mt-0.5">Troco p/ {order.changeFor}</p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 p-3 rounded-xl mb-4 text-sm text-gray-600">
-                    <p><span className="font-bold">Endereço:</span> {order.address}, {order.number} - {order.neighborhood}</p>
-                    {order.notes && <p className="mt-1"><span className="font-bold">Obs:</span> {order.notes}</p>}
-                    {order.needCutlery && <p className="mt-1"><span className="font-bold">Talheres:</span> {order.needCutlery}</p>}
+                  {/* ENDEREÇO, TALHERES E OBSERVAÇÕES */}
+                  <div className="bg-gray-50 p-3.5 rounded-xl mb-4 text-xs space-y-2 border border-gray-100">
+                    <div className="flex items-start gap-1.5 text-gray-700">
+                      <MapPin size={14} className="text-primary shrink-0 mt-0.5" />
+                      <span className="leading-tight">
+                        <strong className="text-gray-900">{order.address}, {order.number}</strong>
+                        {order.neighborhood && <span className="text-gray-600"> — {order.neighborhood}</span>}
+                      </span>
+                    </div>
+
+                    {order.needCutlery && (
+                      <div className="flex items-center gap-1.5 text-gray-600 pt-1.5 border-t border-gray-100">
+                        <Utensils size={13} className="text-gray-400 shrink-0" />
+                        <span>Precisa de talheres descartáveis: <strong className={order.needCutlery === 'Sim' ? 'text-green-700' : 'text-gray-800'}>{order.needCutlery}</strong></span>
+                      </div>
+                    )}
+
+                    {order.notes && (
+                      <div className="flex items-start gap-1.5 text-orange-800 bg-orange-50 p-2.5 rounded-lg border border-orange-100 mt-1">
+                        <span className="shrink-0 text-sm">📝</span>
+                        <span className="leading-tight"><strong>Obs do cliente:</strong> {order.notes}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">

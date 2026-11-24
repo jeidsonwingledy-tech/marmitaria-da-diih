@@ -4,6 +4,7 @@ export interface ProductOption {
   name: string;
   price: number;
   available: boolean;
+  tier?: 'economica' | 'intermediaria' | 'premium';
 }
 
 export interface ProductOptionGroup {
@@ -14,6 +15,8 @@ export interface ProductOptionGroup {
   max: number;
   // Optional: max total extra cost allowed across selected options (to prevent selecting 2 expensive items)
   maxExtraCost?: number;
+  // Optional: intelligently block more than 1 non-economic item (Intermediary/Premium)
+  limitNonEconomic?: boolean;
   // Optional: this group is only shown when the specified group has a specific option selected
   showOnlyWhenGroupId?: string;
   showOnlyWhenOptionId?: string;

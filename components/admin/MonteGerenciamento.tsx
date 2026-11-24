@@ -46,13 +46,24 @@ const MixtureRow: React.FC<{
   onDelete: (groupId: string, optId: string) => void;
 }> = ({ option, groupId, monteItemId, onUpdate, onDelete }) => (
   <div className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${option.available ? 'border-gray-100 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
-    {/* Name */}
-    <input
-      className="flex-1 text-sm font-medium bg-transparent outline-none border-b border-dashed border-gray-300 focus:border-primary min-w-0"
-      value={option.name}
-      onChange={e => onUpdate(groupId, option.id, 'name', e.target.value)}
-      placeholder="Nome da mistura"
-    />
+    {/* Name and Tier */}
+    <div className="flex-1 flex flex-col gap-1 min-w-0">
+      <input
+        className="text-sm font-medium bg-transparent outline-none border-b border-dashed border-gray-300 focus:border-primary w-full"
+        value={option.name}
+        onChange={e => onUpdate(groupId, option.id, 'name', e.target.value)}
+        placeholder="Nome da mistura"
+      />
+      <select
+        value={option.tier || 'economica'}
+        onChange={e => onUpdate(groupId, option.id, 'tier', e.target.value as any)}
+        className={`text-[10px] font-bold p-0.5 rounded outline-none border w-fit ${option.tier === 'premium' ? 'bg-amber-100 text-amber-700 border-amber-200' : option.tier === 'intermediaria' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}
+      >
+        <option value="economica">🥩 Econômica</option>
+        <option value="intermediaria">🍖 Intermediária</option>
+        <option value="premium">⭐ Premium</option>
+      </select>
+    </div>
     {/* Price */}
     <div className="flex items-center gap-1 shrink-0">
       <span className="text-xs text-gray-400">+R$</span>
@@ -150,7 +161,7 @@ const MonteGerenciamento: React.FC = () => {
   const addOption = (itemId: string, groupId: string) => {
     const item = menuItems.find(i => i.id === itemId)!;
     const draft = getDraft(item);
-    const newOpt: MixtureOption = { id: generateId(), name: '', price: 0, available: true };
+    const newOpt: MixtureOption = { id: generateId(), name: '', price: 0, available: true, tier: 'economica' };
     const newGroups = draft.optionGroups.map(g =>
       g.id === groupId ? { ...g, options: [...g.options, newOpt] } : g
     );
@@ -421,7 +432,7 @@ const MonteGerenciamento: React.FC = () => {
                           onChange={e => updateGroup(item.id, group.id, { title: e.target.value })}
                           className="text-xs font-bold text-gray-700 uppercase tracking-wide bg-transparent outline-none border-b border-dashed border-gray-300 focus:border-primary w-full"
                         />
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <button
                             type="button"
                             onClick={() => updateGroup(item.id, group.id, { required: !group.required, min: !group.required ? 1 : 0 })}
@@ -436,6 +447,14 @@ const MonteGerenciamento: React.FC = () => {
                             onChange={e => updateGroup(item.id, group.id, { max: parseInt(e.target.value) || 1 })}
                             className="w-10 text-[10px] p-0.5 border border-gray-200 rounded text-center"
                           />
+                          <label className="flex items-center gap-1 text-[10px] text-gray-600 bg-white px-1.5 py-0.5 rounded border border-gray-200 cursor-pointer hover:bg-gray-50">
+                            <input 
+                              type="checkbox" 
+                              checked={group.limitNonEconomic || false}
+                              onChange={e => updateGroup(item.id, group.id, { limitNonEconomic: e.target.checked })}
+                            />
+                            Inteligência (Max 1 Carnes Nobres)
+                          </label>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

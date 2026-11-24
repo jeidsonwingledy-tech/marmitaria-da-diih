@@ -73,36 +73,64 @@ export const INITIAL_MENU: MenuItem[] = [
         ]
       },
       {
-        id: 'mistura1',
-        title: '1ª Mistura',
-        required: true,
-        min: 1,
-        max: 1,
-        // Só aparece quando o cliente escolher qualquer tamanho (P ou M)
-        // Para P: só esta mistura é mostrada
-        options: [
-          { id: 'frango', name: 'Frango Grelhado', price: 0, available: true },
-          { id: 'carne', name: 'Carne Moída', price: 0, available: true },
-          { id: 'bife', name: 'Bife Acebolado', price: 2.00, available: true },
-          { id: 'peixe', name: 'Peixe Grelhado', price: 3.00, available: true },
-          { id: 'linguica', name: 'Linguiça Toscana', price: 0, available: true },
-        ]
-      },
-      {
-        id: 'mistura2',
-        title: '2ª Mistura (bônus do tamanho M)',
+        id: 'proteinas_p',
+        title: 'Escolha 1 Carne (Tamanho P)',
         required: true,
         min: 1,
         max: 1,
         showOnlyWhenGroupId: 'tamanho',
-        showOnlyWhenOptionId: 'm',
-        maxExtraCost: 3.00,
+        showOnlyWhenOptionId: 'p',
         options: [
-          { id: 'frango2', name: 'Frango Grelhado', price: 0, available: true },
-          { id: 'carne2', name: 'Carne Moída', price: 0, available: true },
-          { id: 'bife2', name: 'Bife Acebolado', price: 2.00, available: true },
-          { id: 'peixe2', name: 'Peixe Grelhado', price: 3.00, available: true },
-          { id: 'linguica2', name: 'Linguiça Toscana', price: 0, available: true },
+          // Econômicas
+          { id: 'frango_p', name: 'Frango Grelhado', price: 0, available: true, tier: 'economica' },
+          { id: 'frangod_p', name: 'Frango Desfiado', price: 0, available: true, tier: 'economica' },
+          { id: 'calabresa_p', name: 'Calabresa', price: 0, available: true, tier: 'economica' },
+          { id: 'linguica_p', name: 'Linguiça Toscana', price: 0, available: true, tier: 'economica' },
+          { id: 'omelete_p', name: 'Omelete', price: 0, available: true, tier: 'economica' },
+          { id: 'figado_p', name: 'Fígado Bovino', price: 0, available: true, tier: 'economica' },
+          { id: 'sardinha_p', name: 'Sardinha', price: 0, available: true, tier: 'economica' },
+          // Intermediárias
+          { id: 'copa_p', name: 'Copa Lombo', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'pernil_p', name: 'Pernil', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'suina_p', name: 'Carne Suína', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'almondega_p', name: 'Almôndegas', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'bife_h_p', name: 'Bife de Hambúrguer', price: 0, available: true, tier: 'intermediaria' },
+          // Premium
+          { id: 'contra_p', name: 'Contra Filé', price: 5.00, available: true, tier: 'premium' },
+          { id: 'picanha_p', name: 'Picanha', price: 8.00, available: true, tier: 'premium' },
+          { id: 'frango_emp_p', name: 'Frango Empanado Especial', price: 3.00, available: true, tier: 'premium' },
+          { id: 'costela_p', name: 'Costela Bovina', price: 6.00, available: true, tier: 'premium' },
+        ]
+      },
+      {
+        id: 'proteinas_m',
+        title: 'Escolha 2 Carnes (Tamanho M)',
+        required: true,
+        min: 2,
+        max: 2,
+        limitNonEconomic: true,
+        showOnlyWhenGroupId: 'tamanho',
+        showOnlyWhenOptionId: 'm',
+        options: [
+          // Econômicas
+          { id: 'frango_m', name: 'Frango Grelhado', price: 0, available: true, tier: 'economica' },
+          { id: 'frangod_m', name: 'Frango Desfiado', price: 0, available: true, tier: 'economica' },
+          { id: 'calabresa_m', name: 'Calabresa', price: 0, available: true, tier: 'economica' },
+          { id: 'linguica_m', name: 'Linguiça Toscana', price: 0, available: true, tier: 'economica' },
+          { id: 'omelete_m', name: 'Omelete', price: 0, available: true, tier: 'economica' },
+          { id: 'figado_m', name: 'Fígado Bovino', price: 0, available: true, tier: 'economica' },
+          { id: 'sardinha_m', name: 'Sardinha', price: 0, available: true, tier: 'economica' },
+          // Intermediárias
+          { id: 'copa_m', name: 'Copa Lombo', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'pernil_m', name: 'Pernil', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'suina_m', name: 'Carne Suína', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'almondega_m', name: 'Almôndegas', price: 0, available: true, tier: 'intermediaria' },
+          { id: 'bife_h_m', name: 'Bife de Hambúrguer', price: 0, available: true, tier: 'intermediaria' },
+          // Premium
+          { id: 'contra_m', name: 'Contra Filé', price: 5.00, available: true, tier: 'premium' },
+          { id: 'picanha_m', name: 'Picanha', price: 8.00, available: true, tier: 'premium' },
+          { id: 'frango_emp_m', name: 'Frango Empanado Especial', price: 3.00, available: true, tier: 'premium' },
+          { id: 'costela_m', name: 'Costela Bovina', price: 6.00, available: true, tier: 'premium' },
         ]
       },
       {
