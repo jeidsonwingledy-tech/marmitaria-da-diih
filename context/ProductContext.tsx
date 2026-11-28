@@ -34,6 +34,7 @@ interface ProductContextType {
   categorias: Category[];
   addMenuItem: (item: Omit<MenuItem, 'id'>) => Promise<void>;
   updateMenuItem: (id: string, updates: Partial<MenuItem>) => Promise<void>;
+  updateMultipleMenuItems: (updates: { id: string; updates: Partial<MenuItem> }[]) => Promise<void>;
   removeMenuItem: (id: string) => Promise<void>;
   addCategory: (name: string) => Promise<void>;
   updateCategory: (id: string, updates: Partial<Category>) => Promise<void>;
@@ -212,6 +213,47 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [notify]);
 
+  const updateMultipleMenuItems = useCallback(async (updatesList: { id: string; updates: Partial<MenuItem> }[]) => {
+    if (updatesList.length === 0) return;
+
+    setMenuItems(prev => {
+      const updatesMap = new Map(updatesList.map(u => [u.id, u.updates]));
+      const next = prev.map(item => {
+        const u = updatesMap.get(item.id);
+        return u ? { ...item, ...u } : item;
+      });
+      writeCache(PRODUCTS_CACHE_KEY, next);
+      return next;
+    });
+
+    if (supabase) {
+      try {
+        const promises = updatesList.map(({ id, updates }) => {
+          const payload: any = {};
+          if (updates.categoryId !== undefined) payload.categoryId = updates.categoryId;
+          if (updates.name !== undefined) payload.name = updates.name;
+          if (updates.description !== undefined) payload.description = updates.description;
+          if (updates.price !== undefined) payload.price = updates.price;
+          if (updates.images !== undefined) payload.images = updates.images;
+          if (updates.optionGroups !== undefined) payload.optionGroups = updates.optionGroups;
+          if (updates.available !== undefined) payload.available = updates.available;
+
+          return supabase.from('menuItems').update(payload).eq('id', id);
+        });
+
+        const results = await Promise.all(promises);
+        const errorResult = results.find(r => r.error);
+        if (errorResult?.error) {
+          console.error("Supabase batch update error:", errorResult.error);
+          notify('Erro ao sincronizar alguns itens: ' + errorResult.error.message, 'error');
+        }
+      } catch (err: any) {
+        console.error("Batch update error:", err);
+        notify('Erro ao atualizar itens em lote.', 'error');
+      }
+    }
+  }, [notify]);
+
   const removeMenuItem = useCallback(async (id: string) => {
     setMenuItems(prev => {
       const next = prev.filter(i => i.id !== id);
@@ -229,6 +271,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       categorias,
       addMenuItem,
       updateMenuItem,
+      updateMultipleMenuItems,
       removeMenuItem,
       addCategory,
       updateCategory,

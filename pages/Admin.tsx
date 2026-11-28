@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Layout, Coffee, ArrowLeft, ImagePlus, X, Lock, Power, Edit3, Settings, PieChart, ListOrdered, Tags, Volume2, LogOut, Phone, MapPin, Utensils, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Layout, Coffee, ArrowLeft, ImagePlus, X, Lock, Power, Edit3, Settings, PieChart, ListOrdered, Tags, Volume2, LogOut, Phone, MapPin, Utensils, CheckCircle2, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUI } from '../context/UIContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ import { INITIAL_MENU, INITIAL_RESTAURANT_INFO, INITIAL_CATEGORIAS } from '../co
 import { MenuItem, ProductOptionGroup, ProductOption } from '../types';
 import { formatCurrency, generateId } from '../utils/formatters';
 import MonteGerenciamento from '../components/admin/MonteGerenciamento';
+import OpcoesGlobais from '../components/admin/OpcoesGlobais';
 
 // --- NAVIGATION TABS COMPONENT ---
 const NavItem = ({ id, icon: Icon, label, activeTab, setActiveTab }: { id: string, icon: React.ElementType, label: string, activeTab: string, setActiveTab: (id: string) => void }) => (
@@ -166,7 +167,7 @@ const Admin = () => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'menu' | 'monte' | 'categorias' | 'config'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'opcoes' | 'menu' | 'monte' | 'categorias' | 'config'>('dashboard');
 
   // Web Audio API notification alert
   const playChime = () => {
@@ -599,9 +600,10 @@ const Admin = () => {
       </div>
 
       {/* Floating Navigation */}
-      <div className="mx-4 -mt-12 bg-gray-50 rounded-2xl shadow-lg p-2 flex justify-between gap-1 border border-gray-200 relative z-10">
+      <div className="mx-4 -mt-12 bg-gray-50 rounded-2xl shadow-lg p-2 flex justify-between gap-1 border border-gray-200 relative z-10 overflow-x-auto no-scrollbar">
         <NavItem id="dashboard" icon={PieChart} label="Visão" activeTab={activeTab} setActiveTab={setActiveTab} />
         <NavItem id="orders" icon={ListOrdered} label="Pedidos" activeTab={activeTab} setActiveTab={setActiveTab} />
+        <NavItem id="opcoes" icon={SlidersHorizontal} label="Opções" activeTab={activeTab} setActiveTab={setActiveTab} />
         <NavItem id="monte" icon={Coffee} label="🍱 Monte" activeTab={activeTab} setActiveTab={setActiveTab} />
         <NavItem id="menu" icon={Layout} label="Cardápio" activeTab={activeTab} setActiveTab={setActiveTab} />
         <NavItem id="categorias" icon={Tags} label="Categ." activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -628,8 +630,29 @@ const Admin = () => {
 
         {/* TAB: DASHBOARD */}
         {activeTab === 'dashboard' && (
-          <div className="text-center text-gray-500 mt-10">
-            <p>Selecione uma opção acima para gerenciar.</p>
+          <div className="space-y-4">
+            {/* Card de Acesso Rápido para Opções Globais */}
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-2xl border border-red-100 flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
+                  <SlidersHorizontal size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-800 text-sm">Acréscimos, Feijões & Complementos</h3>
+                  <p className="text-xs text-gray-500">Ative ou pause opções em todos os pratos com 1 clique</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('opcoes')}
+                className="bg-primary hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0 shadow-xs"
+              >
+                Gerenciar Opções
+              </button>
+            </div>
+
+            <div className="text-center text-gray-400 py-6">
+              <p className="text-sm">Selecione uma opção no menu acima para gerenciar.</p>
+            </div>
           </div>
         )}
 
@@ -904,6 +927,11 @@ const Admin = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {/* TAB: OPÇÕES GLOBAIS (ACRÉSCIMOS, FEIJÕES, COMPLEMENTOS) */}
+        {activeTab === 'opcoes' && (
+          <OpcoesGlobais />
         )}
 
         {/* TAB: MONTE SUA MARMITA */}
